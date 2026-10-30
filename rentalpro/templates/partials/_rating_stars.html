@@ -1,0 +1,9 @@
+<div class="d-flex align-items-center gap-1" aria-label="{% if avg_rating %}Rated {{ avg_rating }} out of 5{% else %}No reviews yet{% endif %}">
+  {% if avg_rating and avg_rating > 0 %}
+    <span class="text-warning"><i class="bi bi-star-fill" aria-hidden="true"></i></span>
+    <span class="fw-semibold small ms-1">{{ avg_rating|floatformat:1 }}</span>
+    {% if review_count %}<span class="text-muted small">({{ review_count }})</span>{% endif %}
+  {% else %}
+    <span class="text-muted small fst-italic">No reviews yet</span>
+  {% endif %}
+</div>

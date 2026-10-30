@@ -1,0 +1,38 @@
+<div class="card h-100 item-card">
+  <div class="position-relative">
+    {% if item.image %}
+      <img src="{{ item.image.url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ item.title }}" style="height: 200px" loading="lazy" width="400" height="200" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
+    {% elif item.image_url %}
+      <img src="{{ item.image_url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ item.title }}" style="height: 200px" loading="lazy" width="400" height="200" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
+    {% else %}
+      <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 200px">
+        <i class="bi bi-image fs-1" aria-hidden="true"></i>
+      </div>
+    {% endif %}
+  </div>
+  <div class="card-body d-flex flex-column">
+    <span class="badge item-category-badge shadow-sm align-self-start mb-2">{{ item.category.name }}</span>
+    <h2 class="card-title fs-6 fw-bold mb-1">
+      <a href="{% if item.detail_url %}{{ item.detail_url }}{% else %}{% url 'ui_preview:item_detail' item.pk %}{% endif %}" class="text-decoration-none text-dark stretched-link">{{ item.title }}</a>
+    </h2>
+    <p class="text-muted small mb-2"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ item.city }}</p>
+    {% if item.rented_start_date %}
+      <p class="text-danger small fw-semibold mb-2">
+        This item is rented for {{ item.rented_start_date|date:"M j, Y" }} to {{ item.rented_end_date|date:"M j, Y" }}.
+      </p>
+    {% endif %}
+    <div class="mb-2">{% include "partials/_rating_stars.html" with avg_rating=item.avg_rating review_count=item.review_count %}</div>
+    <div class="mt-auto pt-2 border-top d-flex align-items-center justify-content-between gap-2">
+      <div><span class="price-display">₹{{ item.daily_price }}</span><span class="text-muted small"> / day</span></div>
+      <span class="deposit-label text-end">Deposit: ₹{{ item.security_deposit }}</span>
+    </div>
+    {% if item.contact_phone and item.owner_id != user.id %}
+      {% include "partials/_lender_contact_links.html" with item=item %}
+    {% endif %}
+    {% if user.is_authenticated and item.owner_id == user.id %}
+      <a class="btn btn-outline-primary position-relative z-1 w-100 mt-2" href="{% url 'ui_preview:edit_listing' item.pk %}">
+        <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit your listing
+      </a>
+    {% endif %}
+  </div>
+</div>

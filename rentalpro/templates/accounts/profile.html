@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Your profile · ToolShare{% endblock %}
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div><p class="preview-label text-uppercase fw-bold mb-1">Account settings</p><h1 class="page-heading fw-bold mb-0">Your profile</h1></div>
+    <a class="btn btn-outline-primary" href="{% url 'ui_preview:my_listings' %}"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>My listed items</a>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <section class="card card-body text-center p-4">
+        {% if profile.avatar_image %}
+          <img src="{{ profile.avatar_image.url }}" alt="{{ request.user.username }} profile picture" class="profile-page-avatar mx-auto mb-3">
+        {% else %}
+          <div class="profile-page-avatar profile-avatar-initial mx-auto mb-3" aria-hidden="true">{{ request.user.get_full_name|default:request.user.username|first|upper }}</div>
+        {% endif %}
+        <h2 class="h4 fw-bold mb-1">{{ request.user.get_full_name|default:request.user.username }}</h2>
+        <p class="text-muted mb-2">@{{ request.user.username }}</p>
+        <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-1" aria-hidden="true"></i>Member since {{ request.user.date_joined|date:"F Y" }}</p>
+      </section>
+    </div>
+    <div class="col-lg-8">
+      <section class="card card-body p-4">
+        <h2 class="h5 fw-bold mb-4">Personal information</h2>
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6"><label for="{{ account_form.first_name.id_for_label }}" class="form-label">First name</label>{{ account_form.first_name }}{% for error in account_form.first_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            <div class="col-md-6"><label for="{{ account_form.last_name.id_for_label }}" class="form-label">Last name</label>{{ account_form.last_name }}{% for error in account_form.last_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            <div class="col-12"><label for="{{ account_form.email.id_for_label }}" class="form-label">Email address</label>{{ account_form.email }}{% for error in account_form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            <div class="col-12"><label for="{{ profile_form.phone_number.id_for_label }}" class="form-label">Phone number</label>{{ profile_form.phone_number }}{% for error in profile_form.phone_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+            <div class="col-12">
+              <label for="{{ profile_form.avatar_image.id_for_label }}" class="form-label">Profile picture</label>
+              {{ profile_form.avatar_image }}
+              <div class="form-text">Browse your device and choose an image file for your profile picture.</div>
+              {% for error in profile_form.avatar_image.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+          </div>
+          <button class="btn btn-primary mt-4" type="submit">Save profile</button>
+        </form>
+      </section>
+    </div>
+  </div>
+{% endblock %}

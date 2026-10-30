@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Settings · ToolShare{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="mb-4"><p class="preview-label text-uppercase fw-bold mb-1">Your account</p><h1 class="page-heading fw-bold mb-1">Settings</h1><p class="text-muted mb-0">Choose how ToolShare looks on your device.</p></div>
+      <form class="card card-body p-4 p-lg-5" method="post">
+        {% csrf_token %}
+        <fieldset>
+          <legend class="h5 fw-bold mb-1">Appearance</legend>
+          <p class="text-muted mb-4">Switch between light and dark mode.</p>
+          <input type="hidden" name="theme" value="light">
+          <div class="d-flex align-items-center justify-content-between gap-3 p-3 border rounded-3">
+            <span class="d-flex align-items-center gap-2" id="theme-label">
+              <i class="bi {% if profile.theme == 'dark' %}bi-moon-stars{% else %}bi-sun{% endif %}" data-theme-icon aria-hidden="true"></i>
+              <span class="fw-semibold" data-theme-label>{% if profile.theme == 'dark' %}Dark mode{% else %}Light mode{% endif %}</span>
+            </span>
+            <div class="form-check form-switch fs-4 mb-0">
+              <input class="form-check-input theme-toggle" type="checkbox" role="switch" name="theme" value="dark" id="theme-toggle" aria-labelledby="theme-label" data-theme-toggle {% if profile.theme == 'dark' %}checked{% endif %}>
+            </div>
+          </div>
+          {% for error in form.theme.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
+        </fieldset>
+        <div class="mt-4"><button class="btn btn-primary" type="submit">Save settings</button></div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Staff overview · ToolShare{% endblock %}
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div><p class="preview-label text-uppercase fw-bold mb-1">Administration</p><h1 class="page-heading fw-bold mb-0">Marketplace overview</h1><p class="text-muted mb-0 mt-2">A snapshot of activity across ToolShare.</p></div>
+    <span class="badge rounded-pill text-bg-dark"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Staff preview</span>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3"><div class="card card-body"><span class="text-muted small">Registered users</span><strong class="display-6 fw-bold">{{ user_count }}</strong><span class="text-success small"><i class="bi bi-arrow-up-right" aria-hidden="true"></i> Community members</span></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card card-body"><span class="text-muted small">Listed items</span><strong class="display-6 fw-bold">{{ item_count }}</strong><span class="text-muted small">Across the marketplace</span></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card card-body"><span class="text-muted small">Bookings</span><strong class="display-6 fw-bold">{{ booking_count }}</strong><span class="text-muted small">All-time rentals</span></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card card-body border-warning"><span class="text-muted small">Needs attention</span><strong class="display-6 fw-bold text-warning-emphasis">{{ pending_count }}</strong><span class="text-muted small">Pending review</span></div></div>
+  </div>
+  <div class="row g-3">
+    <div class="col-md-6"><a href="{% url 'ui_preview:staff_user_list' %}" class="card card-body text-decoration-none text-dark h-100"><div class="d-flex gap-3 align-items-center"><div class="icon-tile rounded-3 bg-primary-subtle text-primary d-flex justify-content-center align-items-center"><i class="bi bi-people fs-4" aria-hidden="true"></i></div><div><h2 class="h5 fw-bold mb-1">Manage users</h2><p class="text-muted mb-0">Review member accounts and activity.</p></div><i class="bi bi-arrow-right ms-auto" aria-hidden="true"></i></div></a></div>
+    <div class="col-md-6"><a href="{% url 'ui_preview:staff_item_list' %}" class="card card-body text-decoration-none text-dark h-100"><div class="d-flex gap-3 align-items-center"><div class="icon-tile rounded-3 bg-success-subtle text-success d-flex justify-content-center align-items-center"><i class="bi bi-tools fs-4" aria-hidden="true"></i></div><div><h2 class="h5 fw-bold mb-1">Manage listings</h2><p class="text-muted mb-0">View marketplace items and their status.</p></div><i class="bi bi-arrow-right ms-auto" aria-hidden="true"></i></div></a></div>
+  </div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Create account · ToolShare{% endblock %}
+{% block content %}
+  <div class="auth-card auth-card-register">
+    <header class="auth-heading text-center">
+      <div class="auth-icon icon-tile rounded-4 bg-success-subtle text-success d-inline-flex align-items-center justify-content-center mb-3"><i class="bi bi-person-plus fs-3" aria-hidden="true"></i></div>
+      <p class="auth-eyebrow text-uppercase fw-bold mb-2">Tools are better shared</p>
+      <h1 class="page-heading h2 fw-bold mb-2">Join ToolShare</h1>
+      <p class="text-muted mb-0">Create an account to rent or share tools in your neighborhood.</p>
+    </header>
+    <form class="auth-form card card-body" method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="mb-3"><label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Username</label>{{ form.username }}<div class="form-text">You’ll use this to log in.</div>{% for error in form.username.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      <div class="row g-3">
+        <div class="col-sm-6 mb-3"><label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">First name</label>{{ form.first_name }}{% for error in form.first_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+        <div class="col-sm-6 mb-3"><label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">Last name</label>{{ form.last_name }}{% for error in form.last_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      </div>
+      <div class="mb-3"><label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">Email address</label>{{ form.email }}{% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      <div class="mb-3"><label for="{{ form.phone_number.id_for_label }}" class="form-label fw-semibold">Phone number</label>{{ form.phone_number }}<div class="form-text">Include your country code if you’re outside India.</div>{% for error in form.phone_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      <div class="mb-3"><label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">Password</label><div class="input-group password-input-group">{{ form.password1 }}<button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password aria-label="Show password" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i><span>Show</span></button></div>{% for error in form.password1.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      <div class="mb-3"><label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">Confirm password</label><div class="input-group password-input-group">{{ form.password2 }}<button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password aria-label="Show password" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i><span>Show</span></button></div>{% for error in form.password2.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      <button class="btn btn-primary w-100 auth-submit" type="submit"><i class="bi bi-person-check me-2" aria-hidden="true"></i>Create account</button>
+    </form>
+    <p class="auth-switch text-center mb-0">Already have an account? <a href="{% url 'ui_preview:login' %}">Log in</a></p>
+  </div>
+{% endblock %}

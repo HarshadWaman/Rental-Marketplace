@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}My rentals · ToolShare{% endblock %}
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+      <p class="preview-label text-uppercase fw-bold mb-1">Your account</p>
+      <h1 class="page-heading fw-bold mb-1">My rentals</h1>
+      <p class="text-muted mb-0">See the tools you’ve requested and your rental dates.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="{% url 'ui_preview:item_list' %}"><i class="bi bi-compass me-1" aria-hidden="true"></i>Explore tools</a>
+  </div>
+
+  {% if rentals %}
+    {% for rental in rentals %}
+      <article class="card mb-3 p-3 p-md-4">
+        <div class="row align-items-center g-3">
+          <div class="col-md-2 col-4">
+            {% if rental.image_url %}
+              <img src="{{ rental.image_url }}" alt="{{ rental.item_title }}" class="img-fluid rounded object-fit-cover image-lightbox-trigger" style="height: 96px; width: 100%" role="button" tabindex="0" aria-label="View {{ rental.item_title }} image full screen" data-image-lightbox>
+            {% else %}
+              <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="height: 96px"><i class="bi bi-tools fs-3" aria-hidden="true"></i></div>
+            {% endif %}
+          </div>
+          <div class="col-md-5 col-8">
+            <span class="badge rounded-pill {% if rental.status == 'approved' %}text-bg-success-subtle text-success-emphasis{% elif rental.status == 'rejected' or rental.status == 'cancelled' %}text-bg-danger-subtle text-danger-emphasis{% elif rental.status == 'completed' %}text-bg-primary-subtle text-primary-emphasis{% else %}text-bg-warning-subtle text-warning-emphasis{% endif %} mb-2">{{ rental.get_status_display }}</span>
+            <h2 class="h5 fw-bold mb-1">{{ rental.item_title }}</h2>
+            <p class="text-muted small mb-0"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ rental.item_city }} · {{ rental.item_category }}</p>
+            <p class="text-muted small mb-0"><i class="bi bi-calendar-event me-1" aria-hidden="true"></i>{{ rental.start_date|date:"M j, Y" }} – {{ rental.end_date|date:"M j, Y" }} ({{ rental.total_days }} day{{ rental.total_days|pluralize }})</p>
+            {% if rental.status == 'approved' %}
+              <p class="text-success small fw-semibold mt-2 mb-0"><i class="bi bi-check-circle me-1" aria-hidden="true"></i>Your request has been accepted{% if rental.listing %} by {{ rental.listing.owner.get_full_name|default:rental.listing.owner.username }}{% endif %}.</p>
+            {% elif rental.status == 'rejected' %}
+              <p class="text-danger small fw-semibold mt-2 mb-0"><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Your request was declined by the lender.</p>
+            {% endif %}
+          </div>
+          <div class="col-md-3 col-6">
+            <span class="price-display">₹{{ rental.total_price }}</span>
+            <div class="text-muted small">Rental price</div>
+            <div class="text-muted small">Deposit: ₹{{ rental.security_deposit }}</div>
+            <div class="fw-semibold small mt-1">Total with deposit: ₹{{ rental.total_due }}</div>
+          </div>
+          <div class="col-md-2 col-6 text-md-end">
+            <span class="small text-muted">Request #{{ rental.pk }}</span>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  {% else %}
+    <div class="card card-body text-center py-5">
+      <div class="icon-tile rounded-4 bg-success-subtle text-success d-inline-flex align-items-center justify-content-center mx-auto mb-3"><i class="bi bi-calendar-check fs-3" aria-hidden="true"></i></div>
+      <h2 class="h4 fw-bold">No rental requests yet</h2>
+      <p class="text-muted mb-4">When you request to rent a tool, it will appear here.</p>
+      <a class="btn btn-primary align-self-center" href="{% url 'ui_preview:item_list' %}">Find a tool</a>
+    </div>
+  {% endif %}
+{% endblock %}

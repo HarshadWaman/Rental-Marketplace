@@ -1,0 +1,25 @@
+<div class="card mb-3 p-3">
+  <div class="row align-items-center">
+    <div class="col-md-2 col-4">
+      {% if booking.item.image_url %}
+        <img src="{{ booking.item.image_url }}" alt="{{ booking.item.title }}" class="img-fluid rounded object-fit-cover image-lightbox-trigger" style="height: 80px; width: 100%" role="button" tabindex="0" aria-label="View {{ booking.item.title }} image full screen" data-image-lightbox>
+      {% elif booking.item.image %}
+        <img src="{{ booking.item.image.url }}" alt="{{ booking.item.title }}" class="img-fluid rounded object-fit-cover image-lightbox-trigger" style="height: 80px; width: 100%" role="button" tabindex="0" aria-label="View {{ booking.item.title }} image full screen" data-image-lightbox>
+      {% else %}
+        <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="height: 80px"><i class="bi bi-tools" aria-hidden="true"></i></div>
+      {% endif %}
+    </div>
+    <div class="col-md-4 col-8">
+      <h3 class="h6 fw-bold mb-1"><a href="{% url 'ui_preview:item_detail' booking.item.pk %}" class="text-decoration-none text-dark">{{ booking.item.title }}</a></h3>
+      <p class="text-muted small mb-0"><i class="bi bi-calendar-event me-1" aria-hidden="true"></i>{{ booking.start_date }} to {{ booking.end_date }} ({{ booking.total_days }} days)</p>
+      <span class="badge bg-{{ booking.status_badge }} text-uppercase mt-1">{{ booking.status }}</span>
+    </div>
+    <div class="col-md-3 col-6 mt-3 mt-md-0">
+      <span class="fw-bold text-dark">₹{{ booking.total_price }}</span>
+      <div class="text-muted small">Deposit: ₹{{ booking.item.security_deposit }}</div>
+    </div>
+    <div class="col-md-3 col-6 text-end mt-3 mt-md-0">
+      <a class="btn btn-sm btn-outline-primary" href="{% url 'ui_preview:item_detail' booking.item.pk %}">View item</a>
+    </div>
+  </div>
+</div>

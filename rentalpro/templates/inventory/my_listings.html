@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}My listed items · ToolShare{% endblock %}
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div><p class="preview-label text-uppercase fw-bold mb-1">Your marketplace activity</p><h1 class="page-heading fw-bold mb-1">My listed items</h1><p class="text-muted mb-0">Manage the tools you’ve shared with your community.</p></div>
+    <a class="btn btn-primary" href="{% url 'ui_preview:item_create' %}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>List a tool</a>
+  </div>
+  {% if listings %}
+    <div class="row g-3 g-lg-4">
+      {% for listing in listings %}
+        <div class="col-sm-6 col-lg-4">
+          <article class="card h-100 item-card overflow-hidden">
+            {% if listing.image %}
+              <img src="{{ listing.image.url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ listing.title }}" style="height: 200px" loading="lazy" role="button" tabindex="0" aria-label="View {{ listing.title }} image full screen" data-image-lightbox>
+            {% elif listing.image_url %}
+              <img src="{{ listing.image_url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ listing.title }}" style="height: 200px" loading="lazy" role="button" tabindex="0" aria-label="View {{ listing.title }} image full screen" data-image-lightbox>
+            {% else %}
+              <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 200px"><i class="bi bi-tools fs-1" aria-hidden="true"></i></div>
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <span class="badge text-bg-light border align-self-start mb-2">{{ listing.category }}</span>
+              <h2 class="h5 fw-bold"><a class="stretched-link text-decoration-none text-dark" href="{% url 'ui_preview:user_listing_detail' listing.pk %}">{{ listing.title }}</a></h2>
+              <p class="small text-muted mb-3"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ listing.city }}</p>
+              <div class="mt-auto border-top pt-3 d-flex align-items-center justify-content-between"><span class="price-display">₹{{ listing.daily_price }}<span class="small fw-normal text-muted"> / day</span></span><span class="small text-muted">Deposit ₹{{ listing.security_deposit }}</span></div>
+              <div class="position-relative z-1 d-flex gap-2 mt-3">
+                <a class="btn btn-outline-primary flex-fill" href="{% url 'ui_preview:edit_listing' listing.pk %}">
+                  <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit listing
+                </a>
+                <form method="post" action="{% url 'ui_preview:delete_listing' listing.pk %}" onsubmit="return confirm('Delete this listing? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button class="btn btn-outline-danger" type="submit" aria-label="Delete {{ listing.title }}">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </article>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card card-body text-center py-5">
+      <div class="icon-tile rounded-4 bg-success-subtle text-success d-inline-flex align-items-center justify-content-center mx-auto mb-3"><i class="bi bi-box-seam fs-3" aria-hidden="true"></i></div>
+      <h2 class="h4 fw-bold">You haven’t listed any tools yet</h2>
+      <p class="text-muted mb-4">Share a tool you own and help someone nearby with their next project.</p>
+      <a class="btn btn-primary align-self-center" href="{% url 'ui_preview:item_create' %}">Create your first listing</a>
+    </div>
+  {% endif %}
+{% endblock %}

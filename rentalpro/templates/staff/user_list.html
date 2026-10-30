@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Manage users · ToolShare{% endblock %}
+{% block content %}
+  <nav aria-label="Breadcrumb" class="mb-3"><ol class="breadcrumb small"><li class="breadcrumb-item"><a href="{% url 'ui_preview:staff_index' %}">Staff</a></li><li class="breadcrumb-item active" aria-current="page">Users</li></ol></nav>
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><p class="preview-label text-uppercase fw-bold mb-1">Administration</p><h1 class="page-heading fw-bold mb-0">Users</h1><p class="text-muted mb-0 mt-2">Member accounts and marketplace activity.</p></div><span class="badge rounded-pill text-bg-light border">{{ users|length }} sample users</span></div>
+  <div class="card overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th scope="col" class="ps-4">Member</th><th scope="col">Joined</th><th scope="col">Rentals</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody>
+          {% for user in users %}
+            <tr><td class="ps-4"><div class="fw-semibold">{{ user.name }}</div><div class="text-muted small">{{ user.email }}</div></td><td>{{ user.joined }}</td><td>{{ user.rentals }}</td><td><span class="badge text-bg-success-subtle text-success-emphasis">{{ user.status }}</span></td><td class="text-end pe-4"><button class="btn btn-sm btn-outline-secondary" type="button">View</button></td></tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-5">No users found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="text-muted small mt-3">Demo data only; user management is not connected to accounts.</p>
+{% endblock %}

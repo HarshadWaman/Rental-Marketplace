@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Leave a review · ToolShare{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <a href="{% url 'ui_preview:item_detail' item.pk %}" class="text-decoration-none small"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to item</a>
+      <h1 class="page-heading h2 fw-bold mt-2 mb-4">Share your experience</h1>
+      <div class="card card-body mb-4"><span class="small text-muted">Reviewing</span><strong>{{ item.title }}</strong><span class="text-muted small">{{ item.city }}</span></div>
+      <form class="card card-body p-4" action="#" method="post">
+        {% csrf_token %}
+        <fieldset class="mb-4">
+          <legend class="form-label fw-semibold">Your rating</legend>
+          <div class="d-flex flex-wrap gap-3">
+            {% for rating in "12345" %}<div class="form-check"><input class="form-check-input" type="radio" name="rating" value="{{ forloop.counter }}" id="rating-{{ forloop.counter }}"{% if forloop.last %} checked{% endif %}><label class="form-check-label" for="rating-{{ forloop.counter }}">{{ forloop.counter }} <i class="bi bi-star-fill text-warning" aria-hidden="true"></i></label></div>{% endfor %}
+          </div>
+        </fieldset>
+        <div class="mb-4"><label for="review-text" class="form-label fw-semibold">Your review</label><textarea id="review-text" class="form-control" name="text" rows="5" placeholder="What should other renters know about the tool and the experience?"></textarea></div>
+        <button class="btn btn-primary align-self-start" type="button">Submit review</button>
+        <p class="text-muted small mt-3 mb-0">Preview only; reviews are not submitted.</p>
+      </form>
+    </div>
+  </div>
+{% endblock %}

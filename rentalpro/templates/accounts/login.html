@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Log in · ToolShare{% endblock %}
+{% block content %}
+  <div class="auth-card auth-card-login">
+    <header class="auth-heading text-center">
+      <div class="auth-icon icon-tile rounded-4 bg-success-subtle text-success d-inline-flex align-items-center justify-content-center mb-3"><i class="bi bi-person-check fs-3" aria-hidden="true"></i></div>
+      <p class="auth-eyebrow text-uppercase fw-bold mb-2">Welcome to ToolShare</p>
+      <h1 class="page-heading h2 fw-bold mb-2">Welcome back</h1>
+      <p class="text-muted mb-0">Log in to find, rent, or share tools in your neighborhood.</p>
+    </header>
+    <form class="auth-form card card-body" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {% if form.errors %}<div class="alert alert-danger" role="alert">The username or password you entered is incorrect.</div>{% endif %}
+      <div class="mb-3"><label for="id_username" class="form-label fw-semibold">Username</label><input class="form-control" id="id_username" name="username" autocomplete="username" placeholder="Enter your username" required autofocus></div>
+      <div class="mb-3"><label for="id_password" class="form-label fw-semibold">Password</label><div class="input-group password-input-group"><input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required><button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password aria-label="Show password" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i><span>Show</span></button></div></div>
+      <div class="text-end mb-3"><a href="{% url 'ui_preview:password_reset' %}" class="small text-decoration-none">Forgot password?</a></div>
+      <button class="btn btn-primary w-100 auth-submit" type="submit"><i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>Log in</button>
+    </form>
+    <p class="auth-switch text-center mb-0">New to ToolShare? <a href="{% url 'ui_preview:register' %}">Create an account</a></p>
+  </div>
+{% endblock %}

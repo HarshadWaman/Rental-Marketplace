@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} · ToolShare{% endblock %}
+{% block content %}
+  <nav aria-label="Breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'ui_preview:item_list' %}">Catalog</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ item.title }}</li>
+    </ol>
+  </nav>
+  <div class="row g-4 g-lg-5">
+    <div class="col-lg-7">
+      <div class="card overflow-hidden mb-4">
+        {% if item.image %}
+          <img src="{{ item.image.url }}" alt="{{ item.title }}" class="object-fit-cover image-lightbox-trigger" style="height: 380px" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
+        {% elif item.image_url %}
+          <img src="{{ item.image_url }}" alt="{{ item.title }}" class="object-fit-cover w-100 image-lightbox-trigger" style="height: 380px" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
+        {% else %}
+          <div class="bg-white d-flex align-items-center justify-content-center text-secondary" style="height: 320px">
+            <div class="text-center"><i class="bi bi-tools display-1" aria-hidden="true"></i><p class="mb-0 mt-2">Tool photo preview</p></div>
+          </div>
+        {% endif %}
+      </div>
+      <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+        <div><span class="badge text-bg-light border mb-2">{{ item.category.name }}</span><h1 class="page-heading display-6 fw-bold mb-1">{{ item.title }}</h1><p class="text-muted mb-0"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ item.city }}</p>
+          {% if item.rented_start_date %}
+            <p class="text-danger small fw-semibold mt-2 mb-0">This item is rented for {{ item.rented_start_date|date:"M j, Y" }} to {{ item.rented_end_date|date:"M j, Y" }}.</p>
+          {% endif %}
+        </div>
+        <div>{% include "partials/_rating_stars.html" with avg_rating=item.avg_rating review_count=item.review_count %}</div>
+      </div>
+      <p class="text-secondary">{{ item.description }}</p>
+      <div class="row g-3 my-4">
+        <div class="col-sm-4"><div class="card card-body h-100"><span class="small text-muted">Brand</span><strong>{{ item.brand }}</strong></div></div>
+        <div class="col-sm-4"><div class="card card-body h-100"><span class="small text-muted">Condition</span><strong>{{ item.condition }}</strong></div></div>
+        <div class="col-sm-4"><div class="card card-body h-100"><span class="small text-muted">Owner</span><strong>{{ item.owner }}</strong></div></div>
+      </div>
+      <section class="mt-5" id="reviews">
+        <h2 class="h4 fw-bold mb-3">Reviews <span class="text-muted fw-normal">({{ item.review_count }})</span></h2>
+        {% for review in reviews %}
+          <article class="card card-body mb-3">
+            <div class="d-flex justify-content-between gap-3">
+              <div><h3 class="h6 fw-bold mb-1">{{ review.author }}</h3><span class="text-warning" aria-label="{{ review.rating }} out of 5 stars">{% for star in "12345" %}{% if forloop.counter <= review.rating %}<i class="bi bi-star-fill" aria-hidden="true"></i>{% else %}<i class="bi bi-star" aria-hidden="true"></i>{% endif %}{% endfor %}</span></div>
+              <span class="text-muted small">{{ review.date }}</span>
+            </div>
+            <p class="mb-0 mt-2 text-secondary">{{ review.text }}</p>
+          </article>
+        {% empty %}
+          <p class="text-muted">No reviews yet. Be the first to share your experience.</p>
+        {% endfor %}
+        {% if review_form and user.is_authenticated and not user_review %}
+          <div class="card card-body mt-4">
+            <h3 class="h5 fw-bold mb-3">Write a review</h3>
+            <form method="post" action="{{ review_url }}">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="{{ review_form.rating.id_for_label }}" class="form-label fw-semibold">Your rating</label>
+                {{ review_form.rating }}
+                {% for error in review_form.rating.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+              </div>
+              <div class="mb-3">
+                <label for="{{ review_form.comment.id_for_label }}" class="form-label fw-semibold">Your review</label>
+                {{ review_form.comment }}
+                {% for error in review_form.comment.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+              </div>
+              <button type="submit" class="btn btn-primary">Submit review</button>
+            </form>
+          </div>
+        {% elif user_review %}
+          <div class="card card-body mt-4">
+            <h3 class="h5 fw-bold mb-3">Update your review</h3>
+            <form method="post" action="{{ review_url }}">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="{{ review_form.rating.id_for_label }}" class="form-label fw-semibold">Your rating</label>
+                {{ review_form.rating }}
+              </div>
+              <div class="mb-3">
+                <label for="{{ review_form.comment.id_for_label }}" class="form-label fw-semibold">Your review</label>
+                {{ review_form.comment }}
+              </div>
+              <button type="submit" class="btn btn-outline-primary">Update review</button>
+            </form>
+          </div>
+        {% endif %}
+      </section>
+    </div>
+    <aside class="col-lg-5">
+      <div class="card card-body sticky-booking-box">
+        <div class="d-flex align-items-baseline gap-1"><span class="price-display">₹{{ item.daily_price }}</span><span class="text-muted">/ day</span></div>
+        <p class="deposit-label mb-3">Refundable security deposit: ₹{{ item.security_deposit }}</p>
+        {% if user.is_authenticated and can_book %}
+          <form method="post" action="{{ booking_url }}">
+            {% csrf_token %}
+            {% if booking_form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ booking_form.non_field_errors }}</div>{% endif %}
+            <div class="mb-3">
+              <label for="{{ booking_form.start_date.id_for_label }}" class="form-label fw-semibold">Rental dates</label>
+              <div class="row g-2">
+                <div class="col-6">{{ booking_form.start_date }}</div>
+                <div class="col-6">{{ booking_form.end_date }}</div>
+              </div>
+              {% for error in booking_form.start_date.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+              {% for error in booking_form.end_date.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="d-flex justify-content-between text-muted small mb-3"><span>Daily rate</span><span>₹{{ item.daily_price }} / day</span></div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">Request to book</button>
+            <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>Demo only. No payment will be collected.</p>
+          </form>
+        {% elif not user.is_authenticated %}
+          <div>
+            <div class="mb-3"><label for="start-date" class="form-label fw-semibold">Rental dates</label><div class="row g-2"><div class="col-6"><input class="form-control" id="start-date" type="date" aria-label="Start date" disabled></div><div class="col-6"><input class="form-control" id="end-date" type="date" aria-label="End date" disabled></div></div></div>
+            <div class="d-flex justify-content-between text-muted small mb-3"><span>Daily rate</span><span>₹{{ item.daily_price }} / day</span></div>
+            <a href="{% url 'ui_preview:login' %}?next={{ request.path }}" class="btn btn-primary w-100 btn-lg">Log in to rent</a>
+            <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-lock me-1" aria-hidden="true"></i>Please log in to book or rent this tool.</p>
+          </div>
+        {% elif is_sample_item %}
+          <div class="alert alert-info mb-0" role="status">This is a sample item and isn’t connected to a lender account. Requests are available for tools listed by members.</div>
+        {% else %}
+          <div class="alert alert-info mb-0" role="status">This is your listing, so you can’t request to rent it.</div>
+        {% endif %}
+        <hr>
+        <div class="d-flex gap-3 align-items-center"><div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center icon-tile"><i class="bi bi-person fs-4" aria-hidden="true"></i></div><div><span class="small text-muted d-block">Listed by</span><strong>{{ item.owner }}</strong></div></div>
+        {% if item.contact_phone %}
+          {% include "partials/_lender_contact_links.html" with item=item %}
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+{% endblock %}
