@@ -5,9 +5,35 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
+from django.urls import reverse
+
+from unfold.admin import ModelAdmin
+
+from .admin import RentalBookingAdmin, RentalListingAdmin, RentalReviewAdmin, UserProfileAdmin
 
 
 class EnsureRenderSuperuserTests(TestCase):
+    def test_authenticated_admin_uses_unfold(self):
+        user = get_user_model().objects.create_superuser(
+            username='admin-ui-test',
+            email='admin-ui-test@example.com',
+            password='Safe-password-983!',
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('admin:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Rental Marketplace')
+        self.assertContains(response, 'unfold')
+        for model_admin in (
+            RentalBookingAdmin,
+            RentalListingAdmin,
+            RentalReviewAdmin,
+            UserProfileAdmin,
+        ):
+            self.assertTrue(issubclass(model_admin, ModelAdmin))
+
     def test_skips_when_environment_variables_are_not_configured(self):
         variables = {
             'DJANGO_SUPERUSER_USERNAME': '',

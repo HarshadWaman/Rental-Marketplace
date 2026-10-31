@@ -47,7 +47,7 @@ if not DEBUG and not ALLOWED_HOSTS:
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -57,6 +57,12 @@ INSTALLED_APPS = [
     'rentalapp',
     'ui_preview',
 ]
+
+UNFOLD = {
+    'SITE_TITLE': 'Rental Marketplace Admin',
+    'SITE_HEADER': 'Rental Marketplace',
+    'SITE_URL': '/',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
