@@ -344,7 +344,45 @@ def submit_listing_review(request, pk):
 @login_required(login_url='ui_preview:login')
 def my_rentals(request):
     rentals = RentalBooking.objects.filter(renter=request.user)
-    return render(request, 'inventory/my_rentals.html', {'rentals': rentals})
+    return render(request, 'inventory/my_rentals.html', {
+        'rentals': rentals,
+        'today': timezone.localdate(),
+    })
+
+
+@login_required(login_url='ui_preview:login')
+@require_POST
+def cancel_rental(request, booking_id):
+    rental = get_object_or_404(
+        RentalBooking,
+        pk=booking_id,
+        renter=request.user,
+    )
+    if rental.status not in (
+        RentalBooking.Status.REQUESTED,
+        RentalBooking.Status.APPROVED,
+    ) or rental.start_date < timezone.localdate():
+        messages.error(request, 'This rental can no longer be cancelled.')
+        return redirect('ui_preview:my_rentals')
+
+    rental.status = RentalBooking.Status.CANCELLED
+    rental.save(update_fields=['status'])
+    messages.success(request, f"Your request for '{rental.item_title}' has been cancelled.")
+    return redirect('ui_preview:my_rentals')
+
+
+@login_required(login_url='ui_preview:login')
+@require_POST
+def delete_rental(request, booking_id):
+    rental = get_object_or_404(
+        RentalBooking,
+        pk=booking_id,
+        renter=request.user,
+    )
+    item_title = rental.item_title
+    rental.delete()
+    messages.success(request, f"Booking for '{item_title}' was permanently deleted.")
+    return redirect('ui_preview:my_rentals')
 
 
 @login_required(login_url='ui_preview:login')

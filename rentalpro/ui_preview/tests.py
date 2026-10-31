@@ -1050,6 +1050,7 @@ class PreviewPageTests(TestCase):
         response = self.client.get(reverse('ui_preview:user_listing_detail', args=[listing.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Request to book')
+        self.assertNotContains(response, 'Demo only. No payment will be collected.')
         self.assertNotContains(response, 'Log in to rent')
 
         post_response = self.client.post(
@@ -1113,6 +1114,235 @@ class PreviewPageTests(TestCase):
         second_response = self.client.get(reverse('ui_preview:my_rentals'))
         self.assertNotContains(second_response, 'Cordless Impact Drill')
         self.assertContains(second_response, 'No rental requests yet')
+
+    def test_renter_can_cancel_own_upcoming_requested_or_approved_booking(self):
+        lender = get_user_model().objects.create_user(
+            username='cancel-lender',
+            password='safe-test-password',
+        )
+        renter = get_user_model().objects.create_user(
+            username='cancel-renter',
+            password='safe-test-password',
+        )
+        listing = RentalListing.objects.create(
+            owner=lender,
+            title='Cancelable Drill',
+            category='Power tools',
+            city='Pune',
+            daily_price='250.00',
+        )
+        for status in (
+            RentalBooking.Status.REQUESTED,
+            RentalBooking.Status.APPROVED,
+        ):
+            booking = RentalBooking.objects.create(
+                renter=renter,
+                listing=listing,
+                item_title=listing.title,
+                item_category=listing.category,
+                item_city=listing.city,
+                daily_price=listing.daily_price,
+                start_date='2026-11-10',
+                end_date='2026-11-12',
+                total_days=3,
+                status=status,
+            )
+            self.client.force_login(renter)
+            response = self.client.post(
+                reverse('ui_preview:cancel_rental', args=[booking.pk]),
+            )
+            self.assertRedirects(response, reverse('ui_preview:my_rentals'))
+            booking.refresh_from_db()
+            self.assertEqual(booking.status, RentalBooking.Status.CANCELLED)
+
+    def test_only_renter_can_cancel_and_cancellation_requires_post(self):
+        lender = get_user_model().objects.create_user(
+            username='cancel-access-lender',
+            password='safe-test-password',
+        )
+        renter = get_user_model().objects.create_user(
+            username='cancel-access-renter',
+            password='safe-test-password',
+        )
+        other_user = get_user_model().objects.create_user(
+            username='cancel-access-other',
+            password='safe-test-password',
+        )
+        listing = RentalListing.objects.create(
+            owner=lender,
+            title='Protected Cancellation Drill',
+            category='Power tools',
+            city='Pune',
+            daily_price='250.00',
+        )
+        booking = RentalBooking.objects.create(
+            renter=renter,
+            listing=listing,
+            item_title=listing.title,
+            item_category=listing.category,
+            item_city=listing.city,
+            daily_price=listing.daily_price,
+            start_date='2026-11-10',
+            end_date='2026-11-12',
+            total_days=3,
+        )
+
+        self.client.force_login(other_user)
+        response = self.client.post(
+            reverse('ui_preview:cancel_rental', args=[booking.pk]),
+        )
+        self.assertEqual(response.status_code, 404)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, RentalBooking.Status.REQUESTED)
+
+        self.client.force_login(renter)
+        response = self.client.get(
+            reverse('ui_preview:cancel_rental', args=[booking.pk]),
+        )
+        self.assertEqual(response.status_code, 405)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, RentalBooking.Status.REQUESTED)
+
+    def test_only_upcoming_active_bookings_show_cancel_action(self):
+        lender = get_user_model().objects.create_user(
+            username='cancel-display-lender',
+            password='safe-test-password',
+        )
+        renter = get_user_model().objects.create_user(
+            username='cancel-display-renter',
+            password='safe-test-password',
+        )
+        listing = RentalListing.objects.create(
+            owner=lender,
+            title='Cancellation Display Drill',
+            category='Power tools',
+            city='Pune',
+            daily_price='250.00',
+        )
+        requested = RentalBooking.objects.create(
+            renter=renter,
+            listing=listing,
+            item_title=listing.title,
+            item_category=listing.category,
+            item_city=listing.city,
+            daily_price=listing.daily_price,
+            start_date='2026-11-10',
+            end_date='2026-11-12',
+            total_days=3,
+        )
+        cancelled = RentalBooking.objects.create(
+            renter=renter,
+            listing=listing,
+            item_title='Already Cancelled Drill',
+            item_category=listing.category,
+            item_city=listing.city,
+            daily_price=listing.daily_price,
+            start_date='2026-11-10',
+            end_date='2026-11-12',
+            total_days=3,
+            status=RentalBooking.Status.CANCELLED,
+        )
+        self.client.force_login(renter)
+
+        response = self.client.get(reverse('ui_preview:my_rentals'))
+
+        self.assertContains(response, reverse('ui_preview:cancel_rental', args=[requested.pk]))
+        self.assertNotContains(response, reverse('ui_preview:cancel_rental', args=[cancelled.pk]))
+
+    def test_renter_can_permanently_delete_own_booking(self):
+        lender = get_user_model().objects.create_user(
+            username='delete-booking-lender',
+            password='safe-test-password',
+        )
+        renter = get_user_model().objects.create_user(
+            username='delete-booking-renter',
+            password='safe-test-password',
+        )
+        listing = RentalListing.objects.create(
+            owner=lender,
+            title='Booking to delete',
+            category='Power tools',
+            city='Pune',
+            daily_price='250.00',
+        )
+        booking = RentalBooking.objects.create(
+            renter=renter,
+            listing=listing,
+            item_title=listing.title,
+            item_category=listing.category,
+            item_city=listing.city,
+            daily_price=listing.daily_price,
+            start_date='2026-11-10',
+            end_date='2026-11-12',
+            total_days=3,
+        )
+        self.client.force_login(renter)
+
+        rentals_response = self.client.get(reverse('ui_preview:my_rentals'))
+        self.assertContains(
+            rentals_response,
+            reverse('ui_preview:delete_rental', args=[booking.pk]),
+        )
+        self.assertContains(rentals_response, 'Permanently delete this booking')
+
+        response = self.client.post(
+            reverse('ui_preview:delete_rental', args=[booking.pk]),
+        )
+
+        self.assertRedirects(response, reverse('ui_preview:my_rentals'))
+        self.assertFalse(RentalBooking.objects.filter(pk=booking.pk).exists())
+        self.assertFalse(
+            RentalBooking.objects.filter(
+                listing=listing,
+                renter=renter,
+            ).exists()
+        )
+
+    def test_booking_delete_is_post_only_and_limited_to_its_renter(self):
+        lender = get_user_model().objects.create_user(
+            username='delete-access-lender',
+            password='safe-test-password',
+        )
+        renter = get_user_model().objects.create_user(
+            username='delete-access-renter',
+            password='safe-test-password',
+        )
+        other_user = get_user_model().objects.create_user(
+            username='delete-access-other',
+            password='safe-test-password',
+        )
+        listing = RentalListing.objects.create(
+            owner=lender,
+            title='Protected booking deletion',
+            category='Power tools',
+            city='Pune',
+            daily_price='250.00',
+        )
+        booking = RentalBooking.objects.create(
+            renter=renter,
+            listing=listing,
+            item_title=listing.title,
+            item_category=listing.category,
+            item_city=listing.city,
+            daily_price=listing.daily_price,
+            start_date='2026-11-10',
+            end_date='2026-11-12',
+            total_days=3,
+        )
+
+        self.client.force_login(other_user)
+        response = self.client.post(
+            reverse('ui_preview:delete_rental', args=[booking.pk]),
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(RentalBooking.objects.filter(pk=booking.pk).exists())
+
+        self.client.force_login(renter)
+        response = self.client.get(
+            reverse('ui_preview:delete_rental', args=[booking.pk]),
+        )
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(RentalBooking.objects.filter(pk=booking.pk).exists())
 
     def test_rental_request_rejects_end_date_before_start_date(self):
         lender = get_user_model().objects.create_user(

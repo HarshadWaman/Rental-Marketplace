@@ -40,6 +40,18 @@
           </div>
           <div class="col-md-2 col-6 text-md-end">
             <span class="small text-muted">Request #{{ rental.pk }}</span>
+            {% if rental.status == 'requested' or rental.status == 'approved' %}
+              {% if rental.start_date >= today %}
+                <form method="post" action="{% url 'ui_preview:cancel_rental' rental.pk %}" class="mt-2" onsubmit="return confirm('Cancel this rental request?');">
+                  {% csrf_token %}
+                  <button class="btn btn-outline-danger btn-sm" type="submit">Cancel booking</button>
+                </form>
+              {% endif %}
+            {% endif %}
+            <form method="post" action="{% url 'ui_preview:delete_rental' rental.pk %}" class="mt-2" onsubmit="return confirm('Permanently delete this booking from your history and the lender’s request history? This cannot be undone.');">
+              {% csrf_token %}
+              <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete booking</button>
+            </form>
           </div>
         </div>
       </article>

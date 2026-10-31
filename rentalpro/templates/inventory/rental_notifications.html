@@ -70,6 +70,8 @@
             <div class="alert alert-success mt-3 mb-0" role="status"><i class="bi bi-check-circle me-1" aria-hidden="true"></i>Request approved. Borrower contact details are shown above.</div>
           {% elif rental.status == 'rejected' %}
             <p class="text-muted small mt-3 mb-0">This request was rejected.</p>
+          {% elif rental.status == 'cancelled' %}
+            <p class="text-muted small mt-3 mb-0">The renter cancelled this booking.</p>
           {% endif %}
         </div>
       </article>
