@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
@@ -151,6 +152,60 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('DJANGO_MEDIA_ROOT', str(BASE_DIR / 'media')))
+SUPABASE_MEDIA_ENV = {
+    'SUPABASE_PROJECT_URL': os.getenv('SUPABASE_PROJECT_URL', '').strip(),
+    'SUPABASE_S3_ENDPOINT_URL': os.getenv('SUPABASE_S3_ENDPOINT_URL', '').strip(),
+    'SUPABASE_S3_REGION': os.getenv('SUPABASE_S3_REGION', '').strip(),
+    'SUPABASE_STORAGE_BUCKET': os.getenv('SUPABASE_STORAGE_BUCKET', '').strip(),
+    'SUPABASE_S3_ACCESS_KEY_ID': os.getenv('SUPABASE_S3_ACCESS_KEY_ID', '').strip(),
+    'SUPABASE_S3_SECRET_ACCESS_KEY': os.getenv('SUPABASE_S3_SECRET_ACCESS_KEY', ''),
+}
+configured_supabase_media = any(SUPABASE_MEDIA_ENV.values())
+if configured_supabase_media or not DEBUG:
+    missing_supabase_media = [
+        key for key, value in SUPABASE_MEDIA_ENV.items() if not value
+    ]
+    if missing_supabase_media:
+        raise ImproperlyConfigured(
+            'Supabase media storage requires these environment variables: '
+            + ', '.join(missing_supabase_media)
+            + '.'
+        )
+
+    supabase_project = urlsplit(SUPABASE_MEDIA_ENV['SUPABASE_PROJECT_URL'])
+    if supabase_project.scheme != 'https' or not supabase_project.netloc:
+        raise ImproperlyConfigured(
+            'SUPABASE_PROJECT_URL must be an HTTPS URL, such as '
+            'https://your-project-ref.supabase.co.'
+        )
+
+    bucket_name = SUPABASE_MEDIA_ENV['SUPABASE_STORAGE_BUCKET']
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3.S3Storage',
+            'OPTIONS': {
+                'access_key': SUPABASE_MEDIA_ENV['SUPABASE_S3_ACCESS_KEY_ID'],
+                'secret_key': SUPABASE_MEDIA_ENV['SUPABASE_S3_SECRET_ACCESS_KEY'],
+                'bucket_name': bucket_name,
+                'location': 'uploads',
+                'endpoint_url': SUPABASE_MEDIA_ENV['SUPABASE_S3_ENDPOINT_URL'],
+                'region_name': SUPABASE_MEDIA_ENV['SUPABASE_S3_REGION'],
+                'addressing_style': 'path',
+                'signature_version': 's3v4',
+                'default_acl': None,
+                'querystring_auth': False,
+                'file_overwrite': False,
+                'custom_domain': (
+                    f'{supabase_project.netloc}/storage/v1/object/public/{bucket_name}'
+                ),
+                'url_protocol': 'https:',
+            },
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
