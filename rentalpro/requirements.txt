@@ -1,8 +1,10 @@
 asgiref==3.12.1
 Django==6.1.2
 Pillow>=11.0
+dj-database-url>=2.3
 django-jazzmin==3.0.5
 gunicorn>=23.0
+psycopg[binary]>=3.2
 whitenoise>=6.9
 sqlparse==0.6.0
 tzdata==2026.5
