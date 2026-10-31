@@ -549,13 +549,14 @@ def _submit_rental_request(request, item, form, listing=None):
 
     total_days = (end_date - start_date).days + 1
     primary_photo = item['photos'][0] if item['photos'] else None
-    image_url = (
-        primary_photo.image.url
+    image_storage_name = (
+        primary_photo.image.name
         if primary_photo
-        else listing.image.url
+        else listing.image.name
         if listing.image
-        else item.get('image_url', '')
+        else ''
     )
+    image_url = '' if image_storage_name else item.get('image_url', '')
     RentalBooking.objects.create(
         renter=request.user,
         listing=listing,
@@ -565,6 +566,7 @@ def _submit_rental_request(request, item, form, listing=None):
         daily_price=item['daily_price'],
         security_deposit=item['security_deposit'],
         image_url=image_url,
+        image_storage_name=image_storage_name,
         start_date=start_date,
         end_date=end_date,
         total_days=total_days,

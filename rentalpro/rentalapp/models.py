@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db import models
 
 
@@ -118,6 +119,7 @@ class RentalBooking(models.Model):
     daily_price = models.DecimalField(max_digits=9, decimal_places=2)
     security_deposit = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     image_url = models.URLField(blank=True)
+    image_storage_name = models.CharField(max_length=500, blank=True)
     start_date = models.DateField()
     end_date = models.DateField()
     total_days = models.PositiveSmallIntegerField()
@@ -138,6 +140,18 @@ class RentalBooking(models.Model):
     @property
     def total_due(self):
         return self.total_price + self.security_deposit
+
+    @property
+    def display_image_url(self):
+        if self.image_storage_name:
+            return default_storage.url(self.image_storage_name)
+        if self.listing_id:
+            photo = self.listing.photos.first()
+            if photo:
+                return photo.image.url
+            if self.listing.image:
+                return self.listing.image.url
+        return self.image_url
 
     def __str__(self):
         return f'{self.item_title} requested by {self.renter.username}'

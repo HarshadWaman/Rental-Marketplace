@@ -1,6 +1,6 @@
 from io import BytesIO
 import tempfile
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from django.contrib.auth import get_user_model
 from django.core import mail
@@ -1062,6 +1062,62 @@ class PreviewPageTests(TestCase):
         self.assertContains(post_response, 'Rental request for')
         self.assertContains(post_response, 'Bookable Cordless Drill')
         self.assertContains(post_response, 'Requested')
+
+    def test_booking_stores_photo_key_instead_of_temporary_signed_url(self):
+        lender = get_user_model().objects.create_user(
+            username='signed-url-owner',
+            password='safe-test-password',
+        )
+        renter = get_user_model().objects.create_user(
+            username='signed-url-renter',
+            password='safe-test-password',
+        )
+        listing = RentalListing.objects.create(
+            owner=lender,
+            title='Signed URL Photo Drill',
+            category='Power tools',
+            city='Pune',
+            daily_price='350.00',
+        )
+        image_buffer = BytesIO()
+        Image.new('RGB', (1, 1), color='orange').save(image_buffer, format='PNG')
+
+        with tempfile.TemporaryDirectory() as media_directory:
+            with override_settings(MEDIA_ROOT=media_directory):
+                photo = RentalListingPhoto.objects.create(
+                    listing=listing,
+                    image=SimpleUploadedFile(
+                        'drill.png',
+                        image_buffer.getvalue(),
+                        content_type='image/png',
+                    ),
+                )
+                self.client.force_login(renter)
+                long_signed_url = (
+                    'https://storage.example.com/private/drill.png?'
+                    + 'signature='
+                    + 'x' * 400
+                )
+                with patch(
+                    'django.db.models.fields.files.FieldFile.url',
+                    new=PropertyMock(return_value=long_signed_url),
+                ):
+                    response = self.client.post(
+                        reverse('ui_preview:user_listing_detail', args=[listing.pk]),
+                        {'start_date': '2026-11-15', 'end_date': '2026-11-16'},
+                    )
+
+                self.assertRedirects(response, reverse('ui_preview:my_rentals'))
+                booking = RentalBooking.objects.get(
+                    renter=renter,
+                    listing=listing,
+                )
+                self.assertEqual(booking.image_storage_name, photo.image.name)
+                self.assertEqual(booking.image_url, '')
+                self.assertNotIn(long_signed_url, booking.image_url)
+
+                rental_response = self.client.get(reverse('ui_preview:my_rentals'))
+                self.assertContains(rental_response, photo.image.url)
 
     def test_sample_item_cannot_create_unrouted_rental_request(self):
         renter = get_user_model().objects.create_user(

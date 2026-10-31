@@ -15,11 +15,13 @@
       <article class="card mb-3 p-3 p-md-4">
         <div class="row align-items-center g-3">
           <div class="col-md-2 col-4">
-            {% if rental.image_url %}
-              <img src="{{ rental.image_url }}" alt="{{ rental.item_title }}" class="img-fluid rounded object-fit-cover image-lightbox-trigger" style="height: 96px; width: 100%" role="button" tabindex="0" aria-label="View {{ rental.item_title }} image full screen" data-image-lightbox>
-            {% else %}
-              <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="height: 96px"><i class="bi bi-tools fs-3" aria-hidden="true"></i></div>
-            {% endif %}
+            {% with image_url=rental.display_image_url %}
+              {% if image_url %}
+                <img src="{{ image_url }}" alt="{{ rental.item_title }}" class="img-fluid rounded object-fit-cover image-lightbox-trigger" style="height: 96px; width: 100%" role="button" tabindex="0" aria-label="View {{ rental.item_title }} image full screen" data-image-lightbox>
+              {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="height: 96px"><i class="bi bi-tools fs-3" aria-hidden="true"></i></div>
+              {% endif %}
+            {% endwith %}
           </div>
           <div class="col-md-5 col-8">
             <span class="badge rounded-pill {% if rental.status == 'approved' %}text-bg-success-subtle text-success-emphasis{% elif rental.status == 'rejected' or rental.status == 'cancelled' %}text-bg-danger-subtle text-danger-emphasis{% elif rental.status == 'completed' %}text-bg-primary-subtle text-primary-emphasis{% else %}text-bg-warning-subtle text-warning-emphasis{% endif %} mb-2">{{ rental.get_status_display }}</span>
