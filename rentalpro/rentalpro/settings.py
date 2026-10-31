@@ -153,7 +153,6 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('DJANGO_MEDIA_ROOT', str(BASE_DIR / 'media')))
 SUPABASE_MEDIA_ENV = {
-    'SUPABASE_PROJECT_URL': os.getenv('SUPABASE_PROJECT_URL', '').strip(),
     'SUPABASE_S3_ENDPOINT_URL': os.getenv('SUPABASE_S3_ENDPOINT_URL', '').strip(),
     'SUPABASE_S3_REGION': os.getenv('SUPABASE_S3_REGION', '').strip(),
     'SUPABASE_STORAGE_BUCKET': os.getenv('SUPABASE_STORAGE_BUCKET', '').strip(),
@@ -172,11 +171,11 @@ if configured_supabase_media or not DEBUG:
             + '.'
         )
 
-    supabase_project = urlsplit(SUPABASE_MEDIA_ENV['SUPABASE_PROJECT_URL'])
-    if supabase_project.scheme != 'https' or not supabase_project.netloc:
+    s3_endpoint = urlsplit(SUPABASE_MEDIA_ENV['SUPABASE_S3_ENDPOINT_URL'])
+    if s3_endpoint.scheme != 'https' or not s3_endpoint.netloc:
         raise ImproperlyConfigured(
-            'SUPABASE_PROJECT_URL must be an HTTPS URL, such as '
-            'https://your-project-ref.supabase.co.'
+            'SUPABASE_S3_ENDPOINT_URL must be an HTTPS URL, such as '
+            'https://your-project-ref.storage.supabase.co/storage/v1/s3.'
         )
 
     bucket_name = SUPABASE_MEDIA_ENV['SUPABASE_STORAGE_BUCKET']
@@ -193,12 +192,9 @@ if configured_supabase_media or not DEBUG:
                 'addressing_style': 'path',
                 'signature_version': 's3v4',
                 'default_acl': None,
-                'querystring_auth': False,
+                'querystring_auth': True,
                 'file_overwrite': False,
-                'custom_domain': (
-                    f'{supabase_project.netloc}/storage/v1/object/public/{bucket_name}'
-                ),
-                'url_protocol': 'https:',
+                'querystring_expire': 3600,
             },
         },
         'staticfiles': {

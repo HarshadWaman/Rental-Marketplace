@@ -31,8 +31,6 @@ services:
         fromDatabase:
           name: rental-marketplace-db
           property: connectionString
-      - key: SUPABASE_PROJECT_URL
-        sync: false
       - key: SUPABASE_S3_ENDPOINT_URL
         sync: false
       - key: SUPABASE_S3_REGION
