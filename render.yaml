@@ -11,7 +11,7 @@ services:
     plan: free
     rootDir: rentalpro
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input
-    startCommand: python manage.py migrate && gunicorn rentalpro.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: python manage.py migrate && python manage.py ensure_render_superuser && gunicorn rentalpro.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /
     autoDeploy: true
     envVars:
