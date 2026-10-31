@@ -104,6 +104,7 @@ def preview_item_list(request):
         review_count=Count('reviews'),
         avg_rating=Avg('reviews__rating'),
     ).prefetch_related(
+        'photos',
         Prefetch(
             'booking_requests',
             queryset=_approved_rentals(),
@@ -119,7 +120,7 @@ def preview_item_list(request):
     items = [_listing_as_item(listing) for listing in listings]
     categories = set(RentalListing.objects.values_list('category', flat=True).distinct())
     cities = set(RentalListing.objects.values_list('city', flat=True).distinct())
-    return render(request, 'inventory/item_list.html', {
+    return render(request, 'home.html', {
         'items': items,
         'categories': sorted(categories),
         'cities': sorted(cities),
@@ -166,6 +167,8 @@ def preview_item_form(request):
         listing = form.save(commit=False)
         listing.owner = request.user
         listing.save()
+        form.save_m2m()
+        form.save_uploaded_photos(listing)
         messages.success(request, f"Your listing '{listing.title}' is now live.")
         return redirect('ui_preview:my_listings')
     return render(request, 'inventory/item_form.html', {
@@ -183,7 +186,8 @@ def edit_listing(request, pk):
         instance=listing,
     )
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        listing = form.save()
+        form.save_uploaded_photos(listing)
         messages.success(request, f"Your listing '{listing.title}' has been updated.")
         return redirect('ui_preview:my_listings')
     return render(request, 'inventory/item_form.html', {
@@ -245,7 +249,7 @@ def preview_profile(request):
 
 @login_required(login_url='ui_preview:login')
 def my_listings(request):
-    listings = RentalListing.objects.filter(owner=request.user)
+    listings = RentalListing.objects.filter(owner=request.user).prefetch_related('photos')
     return render(request, 'inventory/my_listings.html', {'listings': listings})
 
 
@@ -259,6 +263,7 @@ def user_listing_detail(request, pk):
             review_count=Count('reviews'),
             avg_rating=Avg('reviews__rating'),
         ).prefetch_related(
+            'photos',
             Prefetch(
                 'booking_requests',
                 queryset=_approved_rentals(),
@@ -266,7 +271,10 @@ def user_listing_detail(request, pk):
             ),
             Prefetch(
                 'reviews',
-                queryset=RentalReview.objects.select_related('reviewer'),
+                queryset=RentalReview.objects.select_related(
+                    'reviewer',
+                    'reviewer__toolshare_profile',
+                ),
                 to_attr='listing_reviews',
             ),
         ),
@@ -291,6 +299,7 @@ def user_listing_detail(request, pk):
         'reviews': [
             {
                 'author': review.reviewer.get_full_name() or review.reviewer.username,
+                'avatar_url': _user_avatar_url(review.reviewer),
                 'rating': review.rating,
                 'date': review.created_at,
                 'text': review.comment,
@@ -412,13 +421,15 @@ def user_settings(request):
 def _listing_as_item(listing):
     owner_name = listing.owner.get_full_name() or listing.owner.username
     try:
-        phone_number = listing.owner.toolshare_profile.phone_number
+        owner_profile = listing.owner.toolshare_profile
     except UserProfile.DoesNotExist:
-        phone_number = ''
+        owner_profile = None
+    phone_number = owner_profile.phone_number if owner_profile else ''
     whatsapp_phone = re.sub(r'\D', '', phone_number)
     call_phone = re.sub(r'[^\d+]', '', phone_number)
     approved_rentals = getattr(listing, 'active_approved_bookings', [])
     active_rental = approved_rentals[0] if approved_rentals else None
+    photos = list(listing.photos.all())
     return {
         'pk': listing.pk,
         'owner_id': listing.owner_id,
@@ -431,6 +442,7 @@ def _listing_as_item(listing):
         'review_count': listing.review_count,
         'description': listing.description,
         'owner': owner_name,
+        'owner_avatar_url': _user_avatar_url(listing.owner),
         'contact_phone': call_phone,
         'whatsapp_phone': whatsapp_phone,
         'whatsapp_message': (
@@ -439,12 +451,21 @@ def _listing_as_item(listing):
         ),
         'rented_start_date': active_rental.start_date if active_rental else None,
         'rented_end_date': active_rental.end_date if active_rental else None,
-        'brand': 'Not specified',
+        'brand': listing.brand or 'Not specified',
         'condition': 'Not specified',
         'image_url': listing.image_url,
         'image': listing.image,
+        'photos': photos,
         'detail_url': reverse('ui_preview:user_listing_detail', args=[listing.pk]),
     }
+
+
+def _user_avatar_url(user):
+    try:
+        avatar_image = user.toolshare_profile.avatar_image
+    except UserProfile.DoesNotExist:
+        return ''
+    return avatar_image.url if avatar_image else ''
 
 
 def _listing_category_suggestions():
@@ -489,6 +510,14 @@ def _submit_rental_request(request, item, form, listing=None):
         return None
 
     total_days = (end_date - start_date).days + 1
+    primary_photo = item['photos'][0] if item['photos'] else None
+    image_url = (
+        primary_photo.image.url
+        if primary_photo
+        else listing.image.url
+        if listing.image
+        else item.get('image_url', '')
+    )
     RentalBooking.objects.create(
         renter=request.user,
         listing=listing,
@@ -497,11 +526,7 @@ def _submit_rental_request(request, item, form, listing=None):
         item_city=item['city'],
         daily_price=item['daily_price'],
         security_deposit=item['security_deposit'],
-        image_url=(
-            listing.image.url
-            if listing.image
-            else item.get('image_url', '')
-        ),
+        image_url=image_url,
         start_date=start_date,
         end_date=end_date,
         total_days=total_days,

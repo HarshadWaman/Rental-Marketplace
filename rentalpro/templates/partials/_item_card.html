@@ -1,6 +1,8 @@
 <div class="card h-100 item-card">
   <div class="position-relative">
-    {% if item.image %}
+    {% if item.photos %}
+      <img src="{{ item.photos.0.image.url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ item.title }}" style="height: 200px" loading="lazy" width="400" height="200" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
+    {% elif item.image %}
       <img src="{{ item.image.url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ item.title }}" style="height: 200px" loading="lazy" width="400" height="200" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
     {% elif item.image_url %}
       <img src="{{ item.image_url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ item.title }}" style="height: 200px" loading="lazy" width="400" height="200" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
@@ -15,6 +17,14 @@
     <h2 class="card-title fs-6 fw-bold mb-1">
       <a href="{% if item.detail_url %}{{ item.detail_url }}{% else %}{% url 'ui_preview:item_detail' item.pk %}{% endif %}" class="text-decoration-none text-dark stretched-link">{{ item.title }}</a>
     </h2>
+    <div class="d-flex align-items-center gap-2 mb-2 position-relative z-1">
+      {% if item.owner_avatar_url %}
+        <img src="{{ item.owner_avatar_url }}" class="profile-avatar" alt="{{ item.owner }} profile picture" loading="lazy" width="36" height="36">
+      {% else %}
+        <span class="profile-avatar profile-avatar-initial" aria-hidden="true">{{ item.owner|first|upper }}</span>
+      {% endif %}
+      <span class="small text-muted">{{ item.owner }}</span>
+    </div>
     <p class="text-muted small mb-2"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ item.city }}</p>
     {% if item.rented_start_date %}
       <p class="text-danger small fw-semibold mb-2">

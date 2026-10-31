@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
 
-from .models import RentalListing, RentalReview, UserProfile
+from .models import RentalListing, RentalListingPhoto, RentalReview, UserProfile
 
 
 LISTING_CATEGORIES = [
@@ -13,6 +13,24 @@ LISTING_CATEGORIES = [
     ('Cleaning', 'Cleaning'),
     ('Other', 'Other'),
 ]
+
+
+class MultipleImageInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleImageField(forms.ImageField):
+    widget = MultipleImageInput
+
+    def clean(self, data, initial=None):
+        if not data:
+            return []
+        if not isinstance(data, (list, tuple)):
+            data = [data]
+        cleaned_images = []
+        for image in data:
+            cleaned_images.append(super().clean(image, initial))
+        return cleaned_images
 
 
 class RegistrationForm(UserCreationForm):
@@ -53,6 +71,14 @@ class RegistrationForm(UserCreationForm):
 
 
 class RentalListingForm(forms.ModelForm):
+    images = MultipleImageField(
+        required=False,
+        label='Tool photos',
+        widget=MultipleImageInput(attrs={
+            'accept': 'image/*',
+            'class': 'listing-photo-input',
+        }),
+    )
     category = forms.CharField(
         max_length=80,
         widget=forms.TextInput(attrs={
@@ -67,6 +93,7 @@ class RentalListingForm(forms.ModelForm):
         fields = [
             'title',
             'category',
+            'brand',
             'description',
             'city',
             'daily_price',
@@ -75,13 +102,13 @@ class RentalListingForm(forms.ModelForm):
         ]
         widgets = {
             'title': forms.TextInput(attrs={'placeholder': 'e.g. Cordless impact drill'}),
+            'brand': forms.TextInput(attrs={'placeholder': 'e.g. Bosch'}),
             'description': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe the tool and what renters should know.'}),
             'city': forms.TextInput(attrs={'placeholder': 'Your city'}),
             'daily_price': forms.NumberInput(attrs={'min': '1', 'step': '0.01', 'placeholder': '350'}),
             'security_deposit': forms.NumberInput(attrs={'min': '0', 'step': '0.01', 'placeholder': '1500'}),
             'image': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
-                'class': 'visually-hidden',
                 'capture': 'environment',
             }),
         }
@@ -97,6 +124,10 @@ class RentalListingForm(forms.ModelForm):
         if amount < 0:
             raise forms.ValidationError('The security deposit cannot be negative.')
         return amount
+
+    def save_uploaded_photos(self, listing):
+        for image in self.cleaned_data.get('images', []):
+            RentalListingPhoto.objects.create(listing=listing, image=image)
 
 
 class UserAccountForm(forms.ModelForm):

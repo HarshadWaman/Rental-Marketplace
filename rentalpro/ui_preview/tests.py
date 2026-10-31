@@ -16,6 +16,7 @@ from rentalapp.models import (
     RentalAvailabilityNotification,
     RentalBooking,
     RentalListing,
+    RentalListingPhoto,
     RentalReview,
     UserProfile,
 )
@@ -34,6 +35,10 @@ class PreviewPageTests(TestCase):
         self.assertNotContains(response, 'My dashboard')
         self.assertNotContains(response, 'Staff preview')
         self.assertNotContains(response, 'Admin panel')
+        self.assertContains(response, 'floating-tools-stage')
+        self.assertContains(response, 'custom.css')
+        self.assertNotContains(response, 'bootstrap')
+        self.assertEqual(response.content.count(b'<span class="floating-tool '), 8)
 
     def test_admin_panel_is_not_linked_from_homepage(self):
         response = self.client.get('/')
@@ -67,6 +72,9 @@ class PreviewPageTests(TestCase):
             with self.subTest(page=route_name):
                 response = self.client.get(reverse(route_name, args=args))
                 self.assertEqual(response.status_code, 200)
+                if route_name != 'ui_preview:item_list':
+                    self.assertContains(response, 'shared-theme.css')
+                self.assertContains(response, 'shared-nav.css')
 
     def test_registration_creates_user_profile_and_signs_user_in(self):
         response = self.client.post(reverse('ui_preview:register'), {
@@ -167,11 +175,10 @@ class PreviewPageTests(TestCase):
         )
         self.client.force_login(user)
         form_response = self.client.get(reverse('ui_preview:item_create'))
-        self.assertContains(form_response, 'Take a photo')
-        self.assertContains(form_response, 'Browse files')
+        self.assertContains(form_response, 'Take photos')
+        self.assertContains(form_response, 'Choose photos')
         self.assertContains(form_response, 'enctype="multipart/form-data"')
         self.assertContains(form_response, 'accept="image/*"')
-        self.assertContains(form_response, 'capture="environment"')
         self.assertNotContains(form_response, 'Tool photo URL')
 
         image_buffer = BytesIO()
@@ -208,6 +215,80 @@ class PreviewPageTests(TestCase):
                     reverse('ui_preview:user_listing_detail', args=[listing.pk])
                 )
                 self.assertContains(detail_response, '/media/listings/tool.png')
+
+    def test_listing_uploads_multiple_photos_and_can_add_more_when_editing(self):
+        user = get_user_model().objects.create_user(
+            username='multi-image-uploader',
+            password='safe-test-password',
+        )
+        self.client.force_login(user)
+
+        def image_upload(filename, color):
+            image_buffer = BytesIO()
+            Image.new('RGB', (2, 2), color=color).save(image_buffer, format='PNG')
+            return SimpleUploadedFile(
+                filename,
+                image_buffer.getvalue(),
+                content_type='image/png',
+            )
+
+        with tempfile.TemporaryDirectory() as media_directory:
+            with override_settings(MEDIA_ROOT=media_directory):
+                form_response = self.client.get(reverse('ui_preview:item_create'))
+                self.assertContains(form_response, 'name="images"')
+                self.assertContains(form_response, 'multiple')
+                self.assertContains(form_response, 'class="listing-photo-input form-control"')
+                self.assertContains(form_response, 'Take photos')
+                self.assertContains(form_response, 'Choose photos')
+
+                response = self.client.post(
+                    reverse('ui_preview:item_create'),
+                    {
+                        'title': 'Multi-photo Saw',
+                        'category': 'Power tools',
+                        'description': 'A saw with several photos.',
+                        'city': 'Pune',
+                        'daily_price': '250',
+                        'security_deposit': '800',
+                        'images': [
+                            image_upload('front.png', 'red'),
+                            image_upload('side.png', 'blue'),
+                        ],
+                    },
+                )
+
+                self.assertRedirects(response, reverse('ui_preview:my_listings'))
+                listing = RentalListing.objects.get(title='Multi-photo Saw')
+                self.assertEqual(listing.photos.count(), 2)
+                self.assertTrue(all(photo.image.storage.exists(photo.image.name) for photo in listing.photos.all()))
+
+                catalog_response = self.client.get(reverse('ui_preview:item_list'))
+                self.assertContains(catalog_response, '/media/listings/front.png')
+                detail_response = self.client.get(
+                    reverse('ui_preview:user_listing_detail', args=[listing.pk])
+                )
+                self.assertContains(detail_response, 'photo 1')
+                self.assertContains(detail_response, 'photo 2')
+                self.assertContains(detail_response, '/media/listings/side.png')
+
+                edit_response = self.client.get(
+                    reverse('ui_preview:edit_listing', args=[listing.pk])
+                )
+                self.assertContains(edit_response, 'Existing tool photos')
+                response = self.client.post(
+                    reverse('ui_preview:edit_listing', args=[listing.pk]),
+                    {
+                        'title': listing.title,
+                        'category': listing.category,
+                        'description': listing.description,
+                        'city': listing.city,
+                        'daily_price': str(listing.daily_price),
+                        'security_deposit': str(listing.security_deposit),
+                        'images': [image_upload('back.png', 'green')],
+                    },
+                )
+                self.assertRedirects(response, reverse('ui_preview:my_listings'))
+                self.assertEqual(RentalListingPhoto.objects.filter(listing=listing).count(), 3)
 
     def test_profile_settings_and_my_listings_require_login(self):
         for route_name in (
@@ -359,10 +440,12 @@ class PreviewPageTests(TestCase):
         form_response = self.client.get(reverse('ui_preview:item_create'))
         self.assertContains(form_response, 'Choose a suggestion or type your own category.')
         self.assertContains(form_response, '<option value="Power tools">', html=False)
+        self.assertContains(form_response, 'Brand')
 
         response = self.client.post(reverse('ui_preview:item_create'), {
             'title': 'Custom Category Item',
             'category': 'Musical instruments',
+            'brand': 'Yamaha',
             'description': 'A keyboard for rent.',
             'city': 'Pune',
             'daily_price': '400',
@@ -372,6 +455,7 @@ class PreviewPageTests(TestCase):
         self.assertRedirects(response, reverse('ui_preview:my_listings'))
         listing = RentalListing.objects.get(title='Custom Category Item')
         self.assertEqual(listing.category, 'Musical instruments')
+        self.assertEqual(listing.brand, 'Yamaha')
 
         catalog_response = self.client.get(reverse('ui_preview:item_list'))
         self.assertContains(catalog_response, '<option value="Musical instruments">', html=False)
@@ -386,6 +470,66 @@ class PreviewPageTests(TestCase):
             reverse('ui_preview:edit_listing', args=[listing.pk])
         )
         self.assertContains(edit_response, 'value="Musical instruments"')
+        self.assertContains(edit_response, 'value="Yamaha"')
+
+    def test_listing_cards_and_reviews_show_user_profile_images(self):
+        image_buffer = BytesIO()
+        Image.new('RGB', (1, 1), color='blue').save(image_buffer, format='PNG')
+        image_content = image_buffer.getvalue()
+        owner = get_user_model().objects.create_user(
+            username='avatar-listing-owner',
+            password='safe-test-password',
+        )
+        reviewer = get_user_model().objects.create_user(
+            username='avatar-reviewer',
+            first_name='Review',
+            password='safe-test-password',
+        )
+
+        with tempfile.TemporaryDirectory() as media_directory:
+            with override_settings(MEDIA_ROOT=media_directory):
+                UserProfile.objects.create(
+                    user=owner,
+                    avatar_image=SimpleUploadedFile(
+                        'owner.png',
+                        image_content,
+                        content_type='image/png',
+                    ),
+                )
+                UserProfile.objects.create(
+                    user=reviewer,
+                    avatar_image=SimpleUploadedFile(
+                        'reviewer.png',
+                        image_content,
+                        content_type='image/png',
+                    ),
+                )
+                listing = RentalListing.objects.create(
+                    owner=owner,
+                    title='Branded Avatar Drill',
+                    category='Power tools',
+                    brand='Makita',
+                    city='Pune',
+                    daily_price=350,
+                )
+                RentalReview.objects.create(
+                    listing=listing,
+                    reviewer=reviewer,
+                    rating=5,
+                    comment='Works well.',
+                )
+
+                catalog_response = self.client.get(reverse('ui_preview:item_list'))
+                self.assertContains(catalog_response, '/media/profiles/owner.png')
+                self.assertContains(catalog_response, 'avatar-listing-owner profile picture')
+
+                self.client.force_login(reviewer)
+                detail_response = self.client.get(
+                    reverse('ui_preview:user_listing_detail', args=[listing.pk])
+                )
+                self.assertContains(detail_response, 'Makita')
+                self.assertContains(detail_response, '/media/profiles/reviewer.png')
+                self.assertContains(detail_response, 'Review profile picture')
 
     def test_listing_owner_can_edit_listing_and_other_users_cannot(self):
         owner = get_user_model().objects.create_user(
@@ -833,12 +977,50 @@ class PreviewPageTests(TestCase):
         self.assertContains(response, 'Member Impact Drill')
         self.assertNotContains(response, 'Member Pressure Washer')
 
+    def test_homepage_cards_link_to_details_and_keep_image_and_action_controls(self):
+        owner = get_user_model().objects.create_user(
+            username='homepage-card-owner',
+            password='safe-test-password',
+        )
+        UserProfile.objects.create(user=owner, phone_number='+91 98765 43210')
+        listing = RentalListing.objects.create(
+            owner=owner,
+            title='Homepage Card Drill',
+            category='Power tools',
+            city='Pune',
+            daily_price='350.00',
+            image_url='https://example.com/tool.png',
+        )
+        detail_url = reverse('ui_preview:user_listing_detail', args=[listing.pk])
+        renter = get_user_model().objects.create_user(
+            username='homepage-card-renter',
+            password='safe-test-password',
+        )
+        self.client.force_login(renter)
+
+        response = self.client.get(reverse('ui_preview:item_list'))
+
+        self.assertContains(response, f'data-detail-url="{detail_url}"')
+        self.assertContains(response, f'href="{detail_url}">Homepage Card Drill</a>')
+        self.assertContains(response, 'data-image-lightbox')
+        self.assertContains(response, 'WhatsApp')
+        self.assertContains(response, 'Call lender')
+        self.assertContains(response, "event.target.closest('a, button, input, select, textarea, [data-image-lightbox]')")
+
+        self.client.force_login(owner)
+        owner_response = self.client.get(reverse('ui_preview:item_list'))
+        self.assertContains(
+            owner_response,
+            f'href="{reverse("ui_preview:edit_listing", args=[listing.pk])}">Edit your listing</a>',
+        )
+
     def test_anonymous_user_sees_login_prompt_on_item_detail(self):
         response = self.client.get(reverse('ui_preview:item_detail', args=[1]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Log in to rent')
         self.assertContains(response, 'Please log in to book or rent this tool.')
+        self.assertNotContains(response, 'Condition')
         self.assertNotContains(response, '<button type="submit" class="btn btn-primary w-100 btn-lg">Request to book</button>')
 
     def test_anonymous_user_booking_attempt_redirects_to_login(self):
@@ -1293,16 +1475,21 @@ class PreviewPageTests(TestCase):
 
     def test_navbar_renders_auth_controls_correctly(self):
         # Anonymous user sees Log in and Join free
-        anon_resp = self.client.get('/')
+        anon_resp = self.client.get(reverse('ui_preview:login'))
         self.assertContains(anon_resp, 'Log in')
         self.assertContains(anon_resp, 'Join free')
+        self.assertContains(anon_resp, 'List a tool')
         self.assertNotContains(anon_resp, 'Log out')
 
         # Authenticated user sees username and Log out
         user = get_user_model().objects.create_user(username='navuser', password='safe-test-password')
         self.client.force_login(user)
-        auth_resp = self.client.get('/')
+        auth_resp = self.client.get(reverse('ui_preview:settings'))
         self.assertContains(auth_resp, 'navuser')
+        self.assertContains(auth_resp, 'class="notification-link"')
+        self.assertContains(auth_resp, '<svg viewBox="0 0 24 24"', html=False)
+        self.assertContains(auth_resp, 'aria-label="Notifications')
+        self.assertNotContains(auth_resp, '<span class="d-lg-none ms-1">Notifications</span>')
         self.assertContains(auth_resp, reverse('home:profile'))
         self.assertContains(auth_resp, reverse('home:my_listings'))
         self.assertContains(auth_resp, reverse('home:my_rentals'))
@@ -1310,6 +1497,21 @@ class PreviewPageTests(TestCase):
         self.assertContains(auth_resp, reverse('home:settings'))
         self.assertContains(auth_resp, 'Log out')
         self.assertNotContains(auth_resp, 'Join free')
+
+        home_resp = self.client.get(reverse('ui_preview:item_list'))
+        self.assertContains(home_resp, 'class="nav-primary"')
+        self.assertContains(home_resp, 'class="nav-account"')
+        self.assertContains(home_resp, 'aria-label="Notifications')
+        self.assertContains(home_resp, 'class="notification-link"')
+        self.assertContains(home_resp, '<svg viewBox="0 0 24 24"', html=False)
+        self.assertContains(home_resp, 'navuser')
+        self.assertContains(home_resp, 'profile-menu-panel')
+
+        notification_resp = self.client.get(reverse('ui_preview:notifications'))
+        self.assertContains(notification_resp, 'class="site-header"')
+        self.assertContains(notification_resp, 'class="notification-link"')
+        self.assertContains(notification_resp, '<svg viewBox="0 0 24 24"', html=False)
+        self.assertContains(notification_resp, 'class="profile-menu"')
 
     def test_shared_templates_compile(self):
         templates = [

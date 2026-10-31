@@ -28,6 +28,7 @@ class RentalListing(models.Model):
     )
     title = models.CharField(max_length=120)
     category = models.CharField(max_length=80)
+    brand = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     city = models.CharField(max_length=100)
     daily_price = models.DecimalField(max_digits=9, decimal_places=2)
@@ -41,6 +42,21 @@ class RentalListing(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class RentalListingPhoto(models.Model):
+    listing = models.ForeignKey(
+        RentalListing,
+        on_delete=models.CASCADE,
+        related_name='photos',
+    )
+    image = models.ImageField(upload_to='listings/')
+
+    class Meta:
+        ordering = ['pk']
+
+    def __str__(self):
+        return f'Photo for {self.listing.title}'
 
 
 class RentalReview(models.Model):

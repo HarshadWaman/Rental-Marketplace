@@ -10,12 +10,25 @@
   <div class="row g-4 g-lg-5">
     <div class="col-lg-7">
       <div class="card overflow-hidden mb-4">
-        {% if item.image %}
-          <img src="{{ item.image.url }}" alt="{{ item.title }}" class="object-fit-cover image-lightbox-trigger" style="height: 380px" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
-        {% elif item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title }}" class="object-fit-cover w-100 image-lightbox-trigger" style="height: 380px" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
+        {% if item.photos or item.image or item.image_url %}
+          <div class="row g-1">
+            {% if item.image or item.image_url %}
+              <div class="{% if item.photos %}col-6{% else %}col-12{% endif %}">
+                {% if item.image %}
+                  <img src="{{ item.image.url }}" alt="{{ item.title }} photo 1" class="item-detail-image image-lightbox-trigger" role="button" tabindex="0" aria-label="View {{ item.title }} photo 1 full screen" data-image-lightbox>
+                {% else %}
+                  <img src="{{ item.image_url }}" alt="{{ item.title }}" class="item-detail-image image-lightbox-trigger" role="button" tabindex="0" aria-label="View {{ item.title }} image full screen" data-image-lightbox>
+                {% endif %}
+              </div>
+            {% endif %}
+            {% for photo in item.photos %}
+              <div class="{% if not item.image and not item.image_url and forloop.first %}col-12{% else %}col-6{% endif %}">
+                <img src="{{ photo.image.url }}" alt="{{ item.title }} photo {% if item.image or item.image_url %}{{ forloop.counter|add:1 }}{% else %}{{ forloop.counter }}{% endif %}" class="item-detail-image image-lightbox-trigger" role="button" tabindex="0" aria-label="View {{ item.title }} photo {% if item.image or item.image_url %}{{ forloop.counter|add:1 }}{% else %}{{ forloop.counter }}{% endif %} full screen" data-image-lightbox>
+              </div>
+            {% endfor %}
+          </div>
         {% else %}
-          <div class="bg-white d-flex align-items-center justify-content-center text-secondary" style="height: 320px">
+          <div class="item-detail-image-placeholder bg-white d-flex align-items-center justify-content-center text-secondary">
             <div class="text-center"><i class="bi bi-tools display-1" aria-hidden="true"></i><p class="mb-0 mt-2">Tool photo preview</p></div>
           </div>
         {% endif %}
@@ -30,16 +43,22 @@
       </div>
       <p class="text-secondary">{{ item.description }}</p>
       <div class="row g-3 my-4">
-        <div class="col-sm-4"><div class="card card-body h-100"><span class="small text-muted">Brand</span><strong>{{ item.brand }}</strong></div></div>
-        <div class="col-sm-4"><div class="card card-body h-100"><span class="small text-muted">Condition</span><strong>{{ item.condition }}</strong></div></div>
-        <div class="col-sm-4"><div class="card card-body h-100"><span class="small text-muted">Owner</span><strong>{{ item.owner }}</strong></div></div>
+        <div class="col-sm-6"><div class="card card-body h-100"><span class="small text-muted">Brand</span><strong>{{ item.brand }}</strong></div></div>
+        <div class="col-sm-6"><div class="card card-body h-100"><span class="small text-muted">Owner</span><strong>{{ item.owner }}</strong></div></div>
       </div>
       <section class="mt-5" id="reviews">
         <h2 class="h4 fw-bold mb-3">Reviews <span class="text-muted fw-normal">({{ item.review_count }})</span></h2>
         {% for review in reviews %}
           <article class="card card-body mb-3">
             <div class="d-flex justify-content-between gap-3">
-              <div><h3 class="h6 fw-bold mb-1">{{ review.author }}</h3><span class="text-warning" aria-label="{{ review.rating }} out of 5 stars">{% for star in "12345" %}{% if forloop.counter <= review.rating %}<i class="bi bi-star-fill" aria-hidden="true"></i>{% else %}<i class="bi bi-star" aria-hidden="true"></i>{% endif %}{% endfor %}</span></div>
+              <div class="d-flex align-items-center gap-2">
+                {% if review.avatar_url %}
+                  <img src="{{ review.avatar_url }}" class="profile-avatar" alt="{{ review.author }} profile picture" loading="lazy" width="36" height="36">
+                {% else %}
+                  <span class="profile-avatar profile-avatar-initial" aria-hidden="true">{{ review.author|first|upper }}</span>
+                {% endif %}
+                <div><h3 class="h6 fw-bold mb-1">{{ review.author }}</h3><span class="text-warning" aria-label="{{ review.rating }} out of 5 stars">{% for star in "12345" %}{% if forloop.counter <= review.rating %}<i class="bi bi-star-fill" aria-hidden="true"></i>{% else %}<i class="bi bi-star" aria-hidden="true"></i>{% endif %}{% endfor %}</span></div>
+              </div>
               <span class="text-muted small">{{ review.date }}</span>
             </div>
             <p class="mb-0 mt-2 text-secondary">{{ review.text }}</p>

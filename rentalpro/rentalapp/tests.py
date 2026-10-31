@@ -2,6 +2,7 @@ import os
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
@@ -9,7 +10,13 @@ from django.urls import reverse
 
 from unfold.admin import ModelAdmin
 
-from .admin import RentalBookingAdmin, RentalListingAdmin, RentalReviewAdmin, UserProfileAdmin
+from .admin import (
+    RentalBookingAdmin,
+    RentalListingAdmin,
+    RentalMarketplaceUserAdmin,
+    RentalReviewAdmin,
+    UserProfileAdmin,
+)
 
 
 class EnsureRenderSuperuserTests(TestCase):
@@ -33,6 +40,41 @@ class EnsureRenderSuperuserTests(TestCase):
             UserProfileAdmin,
         ):
             self.assertTrue(issubclass(model_admin, ModelAdmin))
+        self.assertTrue(issubclass(RentalMarketplaceUserAdmin, UserAdmin))
+
+    def test_user_admin_has_visible_password_reset_action(self):
+        admin_user = get_user_model().objects.create_superuser(
+            username='password-admin',
+            email='password-admin@example.com',
+            password='Safe-password-983!',
+        )
+        user = get_user_model().objects.create_user(
+            username='password-target',
+            email='password-target@example.com',
+            password='Original-password-983!',
+        )
+        self.client.force_login(admin_user)
+
+        change_url = reverse('admin:auth_user_change', args=[user.pk])
+        response = self.client.get(change_url)
+
+        self.assertEqual(response.status_code, 200)
+        password_url = reverse('admin:auth_user_password_change', args=[user.pk])
+        self.assertContains(response, 'Password reset')
+        self.assertContains(response, 'Change password')
+        self.assertContains(response, password_url)
+
+        password_response = self.client.get(password_url)
+        self.assertEqual(password_response.status_code, 200)
+        self.assertContains(password_response, 'Change password')
+
+        password_response = self.client.post(password_url, {
+            'password1': 'Changed-password-984!',
+            'password2': 'Changed-password-984!',
+        })
+        self.assertEqual(password_response.status_code, 302)
+        user.refresh_from_db()
+        self.assertTrue(user.check_password('Changed-password-984!'))
 
     def test_skips_when_environment_variables_are_not_configured(self):
         variables = {

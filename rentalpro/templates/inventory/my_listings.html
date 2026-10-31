@@ -10,7 +10,9 @@
       {% for listing in listings %}
         <div class="col-sm-6 col-lg-4">
           <article class="card h-100 item-card overflow-hidden">
-            {% if listing.image %}
+            {% if listing.photos.all %}
+              <img src="{{ listing.photos.all.0.image.url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ listing.title }}" style="height: 200px" loading="lazy" role="button" tabindex="0" aria-label="View {{ listing.title }} image full screen" data-image-lightbox>
+            {% elif listing.image %}
               <img src="{{ listing.image.url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ listing.title }}" style="height: 200px" loading="lazy" role="button" tabindex="0" aria-label="View {{ listing.title }} image full screen" data-image-lightbox>
             {% elif listing.image_url %}
               <img src="{{ listing.image_url }}" class="card-img-top object-fit-cover image-lightbox-trigger" alt="{{ listing.title }}" style="height: 200px" loading="lazy" role="button" tabindex="0" aria-label="View {{ listing.title }} image full screen" data-image-lightbox>
