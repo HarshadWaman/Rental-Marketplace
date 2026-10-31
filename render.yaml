@@ -24,7 +24,7 @@ services:
       - key: DJANGO_ALLOWED_HOSTS
         value: .onrender.com
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        value: https://rental-marketplace-web.onrender.com
+        value: https://rental-marketplace-web-kj6q.onrender.com
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: DATABASE_URL
