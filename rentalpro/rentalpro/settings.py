@@ -230,40 +230,25 @@ LOGOUT_REDIRECT_URL = 'ui_preview:item_list'
 
 
 # Email Configuration
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
+# Render's free plan blocks SMTP ports (25/465/587), so on Render we send via
+# Brevo's HTTPS API. Locally you can still use SMTP or the console backend.
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
 
-# 1. Specify the SMTP backend
-EMAIL_BACKEND = os.getenv(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.smtp.EmailBackend'
-)
-
-# 2. SMTP Server details (Gmail configuration)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() in {'1', 'true', 'yes'}
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'false').lower() in {'1', 'true', 'yes'}
-
-# 3. Authentication credentials
-# IMPORTANT: For Gmail, you must use an App Password, not your regular password
-# To generate an App Password:
-# 1. Enable 2-Factor Authentication on your Google Account
-# 2. Go to: https://myaccount.google.com/apppasswords
-# 3. Generate a new App Password for "Mail"
-# 4. Use the 16-character password generated
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'harshadwaman4@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'faur jdmk lygr qjsw')
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
 
-# 4. Default sender address for your app
-DEFAULT_FROM_EMAIL = os.getenv(
-    'DEFAULT_FROM_EMAIL',
-    f'Rental Marketplace <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER and EMAIL_HOST_USER != 'your-email@gmail.com' else 'webmaster@localhost'
-)
+# Verified sender in Brevo, e.g. "Rental Marketplace <you@gmail.com>"
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 
-# Additional email settings
-SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)  # For error emails to admins
-EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))  # Timeout in seconds
-
-# For development: Use console backend if credentials are not configured
-if EMAIL_HOST_USER == 'your-email@gmail.com' or EMAIL_HOST_PASSWORD == 'your-app-password-here':
+if BREVO_API_KEY:
+    EMAIL_BACKEND = 'rentalapp.brevo_backend.BrevoEmailBackend'
+elif EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

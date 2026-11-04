@@ -131,3 +131,36 @@ class EnsureRenderSuperuserTests(TestCase):
         user.refresh_from_db()
         self.assertEqual(user.email, 'old@example.com')
         self.assertTrue(user.check_password('Original-password-983!'))
+
+
+class BrevoEmailBackendTests(TestCase):
+    def test_missing_api_key_raises_error_unless_fail_silently(self):
+        from django.core.mail import EmailMessage
+        from .brevo_backend import BrevoEmailBackend
+
+        backend = BrevoEmailBackend(fail_silently=False)
+        msg = EmailMessage('Subject', 'Body', 'from@example.com', ['to@example.com'])
+        with patch('django.conf.settings.BREVO_API_KEY', ''):
+            with self.assertRaises(ValueError):
+                backend.send_messages([msg])
+
+        backend_silent = BrevoEmailBackend(fail_silently=True)
+        with patch('django.conf.settings.BREVO_API_KEY', ''):
+            sent = backend_silent.send_messages([msg])
+            self.assertEqual(sent, 0)
+
+    @patch('urllib.request.urlopen')
+    def test_successful_send(self, mock_urlopen):
+        from django.core.mail import EmailMessage
+        from .brevo_backend import BrevoEmailBackend
+
+        mock_resp = mock_urlopen.return_value.__enter__.return_value
+        mock_resp.read.return_value = b'{"messageId":"123"}'
+
+        backend = BrevoEmailBackend()
+        msg = EmailMessage('Test Subject', 'Test Body', 'sender@example.com', ['recipient@example.com'])
+        with patch('django.conf.settings.BREVO_API_KEY', 'xkeysib-testkey'):
+            sent = backend.send_messages([msg])
+            self.assertEqual(sent, 1)
+            mock_urlopen.assert_called_once()
+
