@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
+import sys
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
@@ -252,3 +253,7 @@ elif EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    
+
+
+print(f"[email-check] backend={EMAIL_BACKEND} brevo_key_set={bool(BREVO_API_KEY)} from={DEFAULT_FROM_EMAIL}", file=sys.stderr)
