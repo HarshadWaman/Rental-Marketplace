@@ -50,7 +50,7 @@ class PasswordResetOTP(models.Model):
         return ''.join(random.choices(string.digits, k=6))
     
     @classmethod
-    def create_otp(cls, user, expiry_minutes=2, ip_address=None):
+    def create_otp(cls, user, expiry_minutes=10, ip_address=None):
         """Create a new OTP for the user."""
         from django.utils import timezone
         otp_code = cls.generate_otp()

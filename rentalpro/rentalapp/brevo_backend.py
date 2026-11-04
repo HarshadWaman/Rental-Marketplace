@@ -7,6 +7,7 @@ library, so no new dependency is needed.
 """
 import json
 import logging
+import time
 import urllib.error
 import urllib.request
 from email.utils import parseaddr
@@ -72,9 +73,19 @@ class BrevoEmailBackend(BaseEmailBackend):
             },
             method='POST',
         )
-        try:
-            with urllib.request.urlopen(request, timeout=getattr(settings, 'EMAIL_TIMEOUT', 10)) as resp:
-                resp.read()
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode('utf-8', 'replace')
-            raise RuntimeError(f'Brevo API error {exc.code}: {detail}') from exc
+        timeout = getattr(settings, 'EMAIL_TIMEOUT', 10)
+        last_error = None
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(request, timeout=timeout) as resp:
+                    resp.read()
+                return
+            except urllib.error.HTTPError as exc:
+                detail = exc.read().decode('utf-8', 'replace')
+                last_error = RuntimeError(f'Brevo API error {exc.code}: {detail}')
+                if exc.code < 500 and exc.code != 429:
+                    raise last_error from exc  # bad key/sender etc: retrying won't help
+            except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                last_error = exc  # network hiccup / Render cold start: retry
+            time.sleep(1.5 * (attempt + 1))
+        raise last_error

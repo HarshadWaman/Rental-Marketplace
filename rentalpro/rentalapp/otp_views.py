@@ -11,6 +11,8 @@ from django.contrib.auth import login
 from rentalapp.models import PasswordResetOTP
 from rentalapp.utils import send_password_reset_otp
 
+OTP_EXPIRY_MINUTES = 10
+
 
 def get_client_ip(request):
     """Get the client's IP address from the request."""
@@ -38,10 +40,13 @@ def forgot_password(request):
             
             # Create OTP
             ip_address = get_client_ip(request)
-            otp_obj = PasswordResetOTP.create_otp(user, expiry_minutes=2, ip_address=ip_address)
+            otp_obj = PasswordResetOTP.create_otp(user, expiry_minutes=OTP_EXPIRY_MINUTES, ip_address=ip_address)
             
             # Send OTP via email
-            send_password_reset_otp(user, otp_obj.otp)
+            if not send_password_reset_otp(user, otp_obj.otp):
+                otp_obj.delete()
+                messages.error(request, 'We could not send the email right now. Please try again in a minute.')
+                return render(request, 'accounts/forgot_password.html')
             
             # Store user email in session for verification step
             request.session['reset_email'] = email
@@ -166,10 +171,13 @@ def resend_otp(request):
         
         # Create new OTP
         ip_address = get_client_ip(request)
-        otp_obj = PasswordResetOTP.create_otp(user, expiry_minutes=2, ip_address=ip_address)
+        otp_obj = PasswordResetOTP.create_otp(user, expiry_minutes=OTP_EXPIRY_MINUTES, ip_address=ip_address)
         
         # Send OTP via email
-        send_password_reset_otp(user, otp_obj.otp)
+        if not send_password_reset_otp(user, otp_obj.otp):
+            otp_obj.delete()
+            messages.error(request, 'We could not send the email right now. Please try again in a minute.')
+            return redirect('ui_preview:verify_otp')
         
         # Update session with new OTP ID
         request.session['otp_id'] = otp_obj.id

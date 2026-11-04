@@ -246,7 +246,7 @@ def send_password_reset_otp(user, otp_code):
         otp_code: The OTP code to send
     
     Returns:
-        int: Number of successfully sent emails
+        bool: True if the email was accepted for delivery, else False
     """
     subject = 'Password Reset OTP - Rental Marketplace'
     message = f"""
@@ -256,7 +256,7 @@ You have requested to reset your password for your Rental Marketplace account.
 
 Your One-Time Password (OTP) is: {otp_code}
 
-This OTP will expire in 2 minutes.
+This OTP will expire in 10 minutes.
 
 If you did not request a password reset, please ignore this email and your password will remain unchanged.
 
@@ -264,12 +264,13 @@ Best regards,
 Rental Marketplace Team
     """
     
-    return send_simple_email(
-        subject=subject,
-        message=message.strip(),
-        recipient_list=[user.email],
-        fail_silently=True
-    )
-
-
-
+    try:
+        return send_simple_email(
+            subject=subject,
+            message=message.strip(),
+            recipient_list=[user.email],
+            fail_silently=False,
+        ) > 0
+    except Exception:
+        logger.exception('Could not send password reset OTP to user id=%s', user.pk)
+        return False
