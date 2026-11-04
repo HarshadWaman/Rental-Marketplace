@@ -151,13 +151,7 @@ def preview_item_detail(request, pk=1):
     })
 
 
-def preview_dashboard(request):
-    return render(request, 'dashboard/dashboard.html', {
-        'bookings': BOOKINGS,
-        'active_listings': 3,
-        'completed_rentals': 8,
-        'pending_requests': 2,
-    })
+
 
 
 @login_required(login_url='ui_preview:login')

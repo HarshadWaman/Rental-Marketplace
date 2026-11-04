@@ -11,6 +11,7 @@ from .models import (
     RentalListingPhoto,
     RentalReview,
     UserProfile,
+    PasswordResetOTP,
 )
 
 admin.site.unregister(get_user_model())
@@ -62,4 +63,20 @@ class RentalListingPhotoAdmin(ModelAdmin):
 @admin.register(UserProfile)
 class UserProfileAdmin(ModelAdmin):
     list_display = ('user', 'theme')
+
+
+
+@admin.register(PasswordResetOTP)
+class PasswordResetOTPAdmin(ModelAdmin):
+    list_display = ('user', 'otp', 'created_at', 'expires_at', 'is_used', 'is_valid_display', 'ip_address')
+    list_filter = ('is_used', 'created_at')
+    search_fields = ('user__username', 'user__email', 'otp')
+    readonly_fields = ('created_at', 'otp', 'user', 'expires_at', 'ip_address')
+    ordering = ('-created_at',)
+    
+    def is_valid_display(self, obj):
+        return obj.is_valid()
+    is_valid_display.short_description = 'Valid'
+    is_valid_display.boolean = True
+
     search_fields = ('user__username', 'user__email')

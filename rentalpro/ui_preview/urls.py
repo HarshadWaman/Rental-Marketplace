@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView, LogoutView
+from rentalapp import otp_views
 
 from . import views
 
@@ -10,7 +11,6 @@ app_name = 'ui_preview'
 urlpatterns = [
     path('', views.preview_item_list, name='item_list'),
     path('item/<int:pk>/', views.preview_item_detail, name='item_detail'),
-    path('dashboard/', views.preview_dashboard, name='dashboard'),
     path('item/new/', views.preview_item_form, name='item_create'),
     path('listing/<int:pk>/edit/', views.edit_listing, name='edit_listing'),
     path('listing/<int:pk>/delete/', views.delete_listing, name='delete_listing'),
@@ -22,6 +22,17 @@ urlpatterns = [
     path('notifications/<int:booking_id>/<str:action>/', views.respond_to_rental_request, name='respond_to_rental_request'),
     path('register/', views.preview_register, name='register'),
     path('login/', LoginView.as_view(template_name='accounts/login.html'), name='login'),
+    
+    # OTP-based Password Reset (New)
+    path('forgot-password/', otp_views.forgot_password, name='forgot_password'),
+    path('forgot-password/verify/', otp_views.verify_otp, name='forgot_password_verify'),
+    path('forgot-password/verify-otp/', otp_views.verify_otp, name='forgot_password_verify_otp'),
+    path('verify-otp/', otp_views.verify_otp, name='verify_otp'),
+    path('reset-password/', otp_views.reset_password, name='reset_password'),
+    path('forgot-password/reset/', otp_views.reset_password, name='forgot_password_reset'),
+    path('resend-otp/', otp_views.resend_otp, name='resend_otp'),
+    
+    # Old Password Reset (Keep for backward compatibility)
     path(
         'password-reset/',
         auth_views.PasswordResetView.as_view(
@@ -54,6 +65,7 @@ urlpatterns = [
         ),
         name='password_reset_complete',
     ),
+    
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', views.preview_profile, name='profile'),
     path('settings/', views.user_settings, name='settings'),

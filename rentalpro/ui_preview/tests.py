@@ -56,7 +56,6 @@ class PreviewPageTests(TestCase):
         pages = [
             ('ui_preview:item_list', None),
             ('ui_preview:item_detail', [1]),
-            ('ui_preview:dashboard', None),
             ('ui_preview:register', None),
             ('ui_preview:login', None),
             ('ui_preview:password_reset', None),

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        .booking-details {
+            background-color: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎉 Booking Confirmed!</h1>
+    </div>
+    
+    <div class="content">
+        <p>Dear {{ user.username }},</p>
+        
+        <p>Great news! Your booking has been confirmed.</p>
+        
+        <div class="booking-details">
+            <h3>Booking Details</h3>
+            <p><strong>Item:</strong> {{ booking.item.name }}</p>
+            <p><strong>Start Date:</strong> {{ booking.start_date }}</p>
+            <p><strong>End Date:</strong> {{ booking.end_date }}</p>
+            <p><strong>Total Price:</strong> ${{ booking.total_price }}</p>
+        </div>
+        
+        <p>You can view your booking details anytime by logging into your account.</p>
+        
+        <a href="{{ site_url }}" class="button">View My Bookings</a>
+        
+        <p>If you have any questions, please don't hesitate to contact us.</p>
+        
+        <p>Thank you for using Rental Marketplace!</p>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2026 Rental Marketplace. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</body>
+</html>

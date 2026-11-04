@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Verify OTP · Rental Marketplace{% endblock %}
+{% block content %}
+  <div class="container my-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="auth-card">
+          <header class="text-center mb-4">
+            <div class="auth-icon icon-tile rounded-4 bg-info-subtle text-info d-inline-flex align-items-center justify-content-center mb-3">
+              <i class="bi bi-shield-lock fs-3" aria-hidden="true"></i>
+            </div>
+            <p class="auth-eyebrow text-uppercase fw-bold mb-2">Verification</p>
+            <h1 class="page-heading h2 fw-bold mb-2">Enter OTP</h1>
+            <p class="text-muted mb-0">We've sent a 6-digit code to <strong>{{ email }}</strong></p>
+          </header>
+          
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+          
+          <!-- Time Remaining Display -->
+          <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+            <i class="bi bi-clock me-2" aria-hidden="true"></i>
+            <div>
+              <strong>Time Remaining:</strong> 
+              <span id="timer" class="fw-bold" data-seconds="{{ time_remaining }}">
+                <span id="minutes">00</span>:<span id="seconds">00</span>
+              </span>
+            </div>
+          </div>
+          
+          <form method="post" action="{% url 'ui_preview:verify_otp' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="id_otp" class="form-label fw-semibold">One-Time Password</label>
+              <input type="text" class="form-control form-control-lg text-center" id="id_otp" name="otp" 
+                     placeholder="000000" maxlength="6" pattern="[0-9]{6}" required autofocus
+                     style="letter-spacing: 0.5em; font-size: 1.5rem;">
+              <small class="form-text text-muted">Enter the 6-digit code sent to your email</small>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mb-3" id="verify-btn">
+              <i class="bi bi-check-circle me-2" aria-hidden="true"></i>Verify OTP
+            </button>
+          </form>
+          
+          <div class="text-center">
+            <p class="text-muted mb-2">Didn't receive the code?</p>
+            <form method="post" action="{% url 'ui_preview:resend_otp' %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-link text-decoration-none p-0" id="resend-btn">
+                <i class="bi bi-arrow-repeat me-1"></i>Resend OTP
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Timer countdown functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const timerElement = document.getElementById('timer');
+      const minutesElement = document.getElementById('minutes');
+      const secondsElement = document.getElementById('seconds');
+      const verifyBtn = document.getElementById('verify-btn');
+      const resendBtn = document.getElementById('resend-btn');
+      
+      let timeRemaining = parseInt(timerElement.dataset.seconds);
+      
+      function updateTimer() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        
+        minutesElement.textContent = String(minutes).padStart(2, '0');
+        secondsElement.textContent = String(seconds).padStart(2, '0');
+        
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          timerElement.parentElement.classList.remove('alert-info');
+          timerElement.parentElement.classList.add('alert-danger');
+          timerElement.innerHTML = '<strong class="text-danger">OTP Expired</strong>';
+          verifyBtn.disabled = true;
+          verifyBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i>OTP Expired';
+          resendBtn.classList.add('fw-bold');
+        } else if (timeRemaining <= 60) {
+          timerElement.parentElement.classList.remove('alert-info');
+          timerElement.parentElement.classList.add('alert-warning');
+        }
+        
+        timeRemaining--;
+      }
+      
+      updateTimer();
+      const timerInterval = setInterval(updateTimer, 1000);
+    });
+    
+    // Auto-submit when 6 digits are entered
+    document.getElementById('id_otp').addEventListener('input', function(e) {
+      if (this.value.length === 6 && /^[0-9]{6}$/.test(this.value)) {
+        // Optional: Auto-submit when 6 digits are entered
+        // this.form.submit();
+      }
+    });
+  </script>
+{% endblock %}

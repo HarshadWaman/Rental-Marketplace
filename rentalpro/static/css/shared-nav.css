@@ -266,7 +266,6 @@ html[data-theme="dark"] .site-nav .notification-count { border-color: #1b2535; }
   .site-nav a { padding: 8px 9px; font-size: .8rem; }
   .site-nav .nav-cta { min-height: 40px; gap: 5px; padding-inline: 9px; }
   .site-nav .nav-cta svg { width: 16px; height: 16px; }
-  .nav-explore { display: none; }
   .profile-name,
   .profile-chevron { display: none; }
   .site-nav .profile-menu > summary { min-height: 40px; gap: 0; padding: 4px; }

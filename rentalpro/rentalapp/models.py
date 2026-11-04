@@ -21,6 +21,67 @@ class UserProfile(models.Model):
         return f'{self.user.username} profile'
 
 
+class PasswordResetOTP(models.Model):
+    """Model to store OTP for password reset with expiration time."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='password_reset_otps',
+    )
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Password Reset OTP'
+        verbose_name_plural = 'Password Reset OTPs'
+    
+    def __str__(self):
+        return f'OTP for {self.user.username} - {self.otp}'
+    
+    @classmethod
+    def generate_otp(cls):
+        """Generate a random 6-digit OTP."""
+        import random
+        import string
+        return ''.join(random.choices(string.digits, k=6))
+    
+    @classmethod
+    def create_otp(cls, user, expiry_minutes=2, ip_address=None):
+        """Create a new OTP for the user."""
+        from django.utils import timezone
+        otp_code = cls.generate_otp()
+        expires_at = timezone.now() + timezone.timedelta(minutes=expiry_minutes)
+        
+        return cls.objects.create(
+            user=user,
+            otp=otp_code,
+            expires_at=expires_at,
+            ip_address=ip_address
+        )
+    
+    def is_valid(self):
+        """Check if the OTP is still valid (not expired and not used)."""
+        from django.utils import timezone
+        return not self.is_used and timezone.now() < self.expires_at
+    
+    def mark_as_used(self):
+        """Mark the OTP as used."""
+        self.is_used = True
+        self.save(update_fields=['is_used'])
+    
+    def time_remaining(self):
+        """Get the remaining time in seconds until expiration."""
+        from django.utils import timezone
+        if not self.is_valid():
+            return 0
+        remaining = (self.expires_at - timezone.now()).total_seconds()
+        return max(0, int(remaining))
+
+
 class RentalListing(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

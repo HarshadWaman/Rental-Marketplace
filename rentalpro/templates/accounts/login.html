@@ -14,7 +14,7 @@
       {% if form.errors %}<div class="alert alert-danger" role="alert">The username or password you entered is incorrect.</div>{% endif %}
       <div class="mb-3"><label for="id_username" class="form-label fw-semibold">Username</label><input class="form-control" id="id_username" name="username" autocomplete="username" placeholder="Enter your username" required autofocus></div>
       <div class="mb-3"><label for="id_password" class="form-label fw-semibold">Password</label><div class="input-group password-input-group"><input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required><button class="btn btn-outline-secondary password-toggle" type="button" data-toggle-password aria-label="Show password" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i><span>Show</span></button></div></div>
-      <div class="text-end mb-3"><a href="{% url 'ui_preview:password_reset' %}" class="small text-decoration-none">Forgot password?</a></div>
+      <div class="text-end mb-3"><a href="{% url 'ui_preview:forgot_password' %}" class="small text-decoration-none">Forgot password?</a></div>
       <button class="btn btn-primary w-100 auth-submit" type="submit"><i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>Log in</button>
     </form>
     <p class="auth-switch text-center mb-0">New to ToolShare? <a href="{% url 'ui_preview:register' %}">Create an account</a></p>

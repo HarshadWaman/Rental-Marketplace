@@ -229,21 +229,41 @@ LOGIN_REDIRECT_URL = 'ui_preview:item_list'
 LOGOUT_REDIRECT_URL = 'ui_preview:item_list'
 
 
-# Email
+# Email Configuration
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+# 1. Specify the SMTP backend
 EMAIL_BACKEND = os.getenv(
     'EMAIL_BACKEND',
     'django.core.mail.backends.smtp.EmailBackend'
-    if EMAIL_HOST
-    else 'django.core.mail.backends.console.EmailBackend',
 )
+
+# 2. SMTP Server details (Gmail configuration)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() in {'1', 'true', 'yes'}
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'false').lower() in {'1', 'true', 'yes'}
+
+# 3. Authentication credentials
+# IMPORTANT: For Gmail, you must use an App Password, not your regular password
+# To generate an App Password:
+# 1. Enable 2-Factor Authentication on your Google Account
+# 2. Go to: https://myaccount.google.com/apppasswords
+# 3. Generate a new App Password for "Mail"
+# 4. Use the 16-character password generated
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'harshadwaman4@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'faur jdmk lygr qjsw')
+
+# 4. Default sender address for your app
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
-    EMAIL_HOST_USER or 'webmaster@localhost',
+    f'Rental Marketplace <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER and EMAIL_HOST_USER != 'your-email@gmail.com' else 'webmaster@localhost'
 )
+
+# Additional email settings
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)  # For error emails to admins
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))  # Timeout in seconds
+
+# For development: Use console backend if credentials are not configured
+if EMAIL_HOST_USER == 'your-email@gmail.com' or EMAIL_HOST_PASSWORD == 'your-app-password-here':
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
