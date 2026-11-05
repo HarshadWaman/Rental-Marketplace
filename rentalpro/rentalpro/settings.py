@@ -256,4 +256,5 @@ else:
     
 
 
-print(f"[email-check] backend={EMAIL_BACKEND} brevo_key_set={bool(BREVO_API_KEY)} from={DEFAULT_FROM_EMAIL}", file=sys.stderr)
+BREVO_API_KEY = BREVO_API_KEY.strip().strip('"').strip("'")
+print(f"[email-check] key_prefix={BREVO_API_KEY[:9]!r} key_len={len(BREVO_API_KEY)}", file=sys.stderr)
