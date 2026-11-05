@@ -231,10 +231,7 @@ LOGOUT_REDIRECT_URL = 'ui_preview:item_list'
 
 
 # Email Configuration
-# Render's free plan blocks SMTP ports (25/465/587), so on Render we send via
-# Brevo's HTTPS API. Locally you can still use SMTP or the console backend.
-BREVO_API_KEY = os.getenv('BREVO_API_KEY', '').strip().strip('"').strip("'")
-
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() in {'1', 'true', 'yes'}
@@ -243,18 +240,9 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'harshadwaman4@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'faur jdmk lygr qjsw')
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
 
-# Verified sender in Brevo, e.g. "Rental Marketplace <you@gmail.com>"
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'webmaster@localhost')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'harshadwaman4@gmail.com')
 SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 
-if BREVO_API_KEY:
-    EMAIL_BACKEND = 'rentalapp.brevo_backend.BrevoEmailBackend'
-elif EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-print(f"[email-check] backend={EMAIL_BACKEND} default_from={DEFAULT_FROM_EMAIL} brevo_key_prefix={BREVO_API_KEY[:9]!r}", file=sys.stderr)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
